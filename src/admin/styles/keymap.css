@@ -1,0 +1,253 @@
+/* 码表数据（按需加载） */
+
+.xw-keymap__toolbar {
+  justify-content: space-between;
+}
+
+.xw-keymap__filters {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 8px;
+  min-width: 0;
+}
+
+.xw-keymap__filters .xw-input {
+  max-width: 320px;
+}
+
+.xw-keymap__form {
+  display: grid;
+  grid-template-columns:
+    96px minmax(140px, 1.2fr) minmax(180px, 2fr) minmax(140px, 1fr) auto;
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+.xw-keymap__form .xw-btn {
+  align-self: center;
+}
+
+.xw-keymap__key {
+  text-align: center;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.xw-keymap__code {
+  font-family: var(--xw-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  text-transform: uppercase;
+}
+
+.xw-keymap__key-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--xw-radius);
+  background: var(--xw-brand-soft);
+  color: var(--xw-brand-text);
+  font-family: var(--xw-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.xw-keymap__char {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.xw-keymap__code-text {
+  font-family: var(--xw-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+}
+
+.xw-keymap__import {
+  padding: 0 0 16px;
+}
+
+.xw-keymap__import .xw-field__hint,
+.xw-keymap__import-actions,
+.xw-keymap__csv,
+.xw-keymap__import-submit,
+.xw-keymap__report {
+  margin-right: 18px;
+  margin-left: 18px;
+}
+
+.xw-keymap__import .xw-field__hint {
+  margin-top: 12px;
+}
+
+.xw-keymap__import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.xw-keymap__csv {
+  margin-top: 10px;
+  font-family: var(--xw-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12.5px;
+}
+
+.xw-keymap__import-submit {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.xw-keymap__report {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--xw-border);
+  border-radius: var(--xw-radius);
+  background: var(--xw-surface);
+  color: var(--xw-text-muted);
+  font-size: 12.5px;
+}
+
+.xw-keymap__report p {
+  margin: 0;
+}
+
+.xw-keymap__report ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--xw-danger);
+  line-height: 1.6;
+}
+
+.xw-keymap__matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.xw-keymap__matrix .xw-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.xw-keymap__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--xw-surface-strong);
+  color: var(--xw-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.xw-keymap__badge.is-done {
+  background: var(--xw-brand-soft);
+  color: var(--xw-brand-text);
+}
+
+.xw-keymap__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 16px 18px;
+}
+
+.xw-keymap__stats div {
+  min-width: 0;
+}
+
+.xw-keymap__stats dt {
+  color: var(--xw-text-muted);
+  font-size: 11.5px;
+}
+
+.xw-keymap__stats dd {
+  margin: 3px 0 0;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.xw-keymap__missing {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 18px 16px;
+}
+
+.xw-keymap__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.xw-keymap__chip {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px dashed var(--xw-border);
+  border-radius: 6px;
+  color: var(--xw-text-muted);
+  font-family: var(--xw-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11.5px;
+}
+
+.xw-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.xw-pager__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--xw-text-muted);
+  font-size: 12.5px;
+}
+
+.xw-pager__nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.xw-pager__info {
+  color: var(--xw-text-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1120px) {
+  .xw-keymap__form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .xw-keymap__form .xw-btn {
+    justify-self: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .xw-keymap__filters {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .xw-keymap__filters .xw-input {
+    max-width: none;
+  }
+
+  .xw-keymap__form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .xw-keymap__matrix {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,52 @@
+/* 标签选择（按需加载） */
+
+/* ---------- 标签选择 ---------- */
+
+.xw-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.xw-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--xw-border);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.xw-tag-chip:hover:not(:disabled) {
+  background: var(--xw-hover);
+}
+
+.xw-tag-chip.is-active {
+  border-color: var(--xw-brand-text);
+  background: var(--xw-brand-soft);
+  color: var(--xw-brand-text);
+}
+
+.xw-tag-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.xw-tag-chip__count {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.xw-tag-create {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.xw-tag-create .xw-input {
+  flex: 1;
+}

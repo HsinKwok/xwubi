@@ -1,0 +1,22 @@
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+/favicon.ico
+  Cache-Control: public, max-age=86400
+
+# 后台页面与静态资源不对搜索引擎开放，且每次回到页面都要重新校验
+/admin
+  Cache-Control: no-cache
+  X-Robots-Tag: noindex
+
+/admin/*
+  Cache-Control: no-cache
+  X-Robots-Tag: noindex
+
+/admin.html
+  Cache-Control: no-cache
+  X-Robots-Tag: noindex

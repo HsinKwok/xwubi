@@ -1,0 +1,34 @@
+name = "xwubi"
+main = "src/worker/index.ts"
+compatibility_date = "2025-09-01"
+
+# 静态资源（Vite 构建产物）交给 Cloudflare 边缘直接分发；
+# 未命中静态文件的请求才会进入 Worker（API 与 SPA 路由回退）。
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "none"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "xwubi"
+# 部署前替换为 `wrangler d1 create xwubi` 返回的真实 id
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "migrations"
+
+[[kv_namespaces]]
+binding = "CACHE"
+# 部署前替换为 `wrangler kv namespace create CACHE` 返回的真实 id
+id = "00000000000000000000000000000001"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "xwubi-media"
+
+[vars]
+ENVIRONMENT = "development"
+SITE_ORIGIN = "http://localhost:8787"
+# 发件人地址（需在 Resend 完成域名验证）；留空时邮件只打印到控制台，便于本地联调
+MAIL_FROM = ""
+# 生产环境通过 `wrangler secret put RESEND_API_KEY` 配置，不要写在此文件
+

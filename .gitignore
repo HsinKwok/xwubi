@@ -1,0 +1,21 @@
+# 依赖与构建产物
+node_modules/
+dist/
+
+# 本地 D1/KV 状态
+.wrangler/
+
+# 环境变量与密钥
+.dev.vars
+.env
+.env.*
+
+# 站点内容数据（课程、资讯、开发种子）：数据不入库，单独部署
+seeds/
+
+# 编辑器与工具产物
+.trae/
+.trae-html-share-packages/
+.screenshots/
+*.log
+.DS_Store

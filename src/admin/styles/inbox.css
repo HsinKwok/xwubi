@@ -1,0 +1,136 @@
+/* 用户与投稿（按需加载） */
+
+/* ---------- 用户与投稿 ---------- */
+
+.xw-inbox__tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--xw-border);
+}
+
+.xw-inbox__tab {
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--xw-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.xw-inbox__tab:hover {
+  color: var(--xw-text);
+}
+
+.xw-inbox__tab.is-active {
+  color: var(--xw-text);
+  border-bottom-color: var(--xw-brand);
+}
+
+.xw-inbox-card__title {
+  display: block;
+  margin: 8px 0 0;
+  color: var(--xw-text);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+a.xw-inbox-card__title:hover {
+  color: var(--xw-brand-text);
+}
+
+.xw-inbox-card__meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 0 0;
+  color: var(--xw-text-muted);
+  font-size: 12px;
+}
+
+.xw-inbox-card__body {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.xw-inbox-card__fact {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.xw-inbox-card__link {
+  color: var(--xw-brand-text);
+  text-decoration: none;
+}
+
+.xw-inbox-card__link:hover {
+  text-decoration: underline;
+}
+
+.xw-inbox-card__reason {
+  margin: 8px 0 0;
+  color: var(--xw-danger);
+  font-size: 12px;
+}
+
+.xw-inbox-card__reject {
+  flex-basis: 100%;
+  padding-top: 12px;
+  border-top: 1px dashed var(--xw-border);
+}
+
+.xw-inbox-card__reject-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.xw-status--new,
+.xw-status--open {
+  background: rgba(234, 179, 8, 0.14);
+  color: #a16207;
+}
+
+.xw-status--claimed,
+.xw-status--assigned {
+  background: rgba(59, 130, 246, 0.14);
+  color: #1d4ed8;
+}
+
+.xw-status--accepted,
+.xw-status--fixed {
+  background: var(--xw-brand-soft);
+  color: var(--xw-brand-text);
+}
+
+.xw-status--rejected,
+.xw-status--closed {
+  background: var(--xw-surface);
+  color: var(--xw-text-muted);
+}
+
+.xw-status--spam {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--xw-danger);
+}
+
+:root[data-theme='dark'] .xw-status--new,
+:root[data-theme='dark'] .xw-status--open {
+  color: #fbbf24;
+}
+
+:root[data-theme='dark'] .xw-status--claimed,
+:root[data-theme='dark'] .xw-status--assigned {
+  color: #93c5fd;
+}

@@ -1,0 +1,105 @@
+/* ---------- filters ---------- */
+
+.site-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+
+.site-filter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.site-filter__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+  min-width: 44px;
+}
+
+.site-filter__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.site-filter__option {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.site-filter__option:hover {
+  color: var(--ink);
+}
+
+.site-filter__option.is-active {
+  color: var(--ink);
+  border-color: var(--line);
+  background: var(--surface-muted);
+}
+
+.site-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.site-keymap-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.site-keymap-entry:hover {
+  border-color: var(--ink);
+}
+
+.site-keymap-entry__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.site-keymap-entry__title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.site-keymap-entry__desc {
+  color: var(--ink-muted);
+  font-size: 12.5px;
+}
+
+.site-keymap-entry__arrow {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  transition: transform 140ms ease;
+}
+
+.site-keymap-entry:hover .site-keymap-entry__arrow {
+  transform: translateX(3px);
+}

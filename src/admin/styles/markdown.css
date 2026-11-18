@@ -1,0 +1,164 @@
+/* Markdown 编辑器（按需加载） */
+
+/* ---------- Markdown 编辑器 ---------- */
+
+.xw-md {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xw-md__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.xw-md__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.xw-md__btn {
+  border: 1px solid var(--xw-border);
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.xw-md__btn:hover:not(:disabled) {
+  background: var(--xw-hover);
+}
+
+.xw-md__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.xw-md__spacer {
+  flex: 1;
+}
+
+.xw-md__count {
+  color: var(--xw-text-muted);
+  font-size: 12px;
+}
+
+.xw-md__preview {
+  min-height: 320px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--xw-border);
+  border-radius: var(--xw-radius);
+  font-size: 15.5px;
+  line-height: 1.85;
+  word-break: break-word;
+}
+
+.xw-md__preview > :first-child {
+  margin-top: 0;
+}
+
+.xw-md__preview > :last-child {
+  margin-bottom: 0;
+}
+
+.xw-md__preview h1,
+.xw-md__preview h2,
+.xw-md__preview h3,
+.xw-md__preview h4,
+.xw-md__preview h5,
+.xw-md__preview h6 {
+  margin: 1.8em 0 0.6em;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.xw-md__preview h1 {
+  font-size: 1.65em;
+}
+
+.xw-md__preview h2 {
+  font-size: 1.3em;
+}
+
+.xw-md__preview h3 {
+  font-size: 1.12em;
+}
+
+.xw-md__preview h4,
+.xw-md__preview h5,
+.xw-md__preview h6 {
+  font-size: 1em;
+}
+
+.xw-md__preview p {
+  margin: 0.8em 0;
+}
+
+.xw-md__preview ul,
+.xw-md__preview ol {
+  margin: 0.8em 0;
+  padding-left: 1.4em;
+}
+
+.xw-md__preview li + li {
+  margin-top: 0.35em;
+}
+
+.xw-md__preview blockquote {
+  margin: 1em 0;
+  padding: 0.2em 0.9em;
+  border-left: 3px solid var(--xw-border);
+  color: var(--xw-text-muted);
+}
+
+.xw-md__preview code {
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  background: var(--xw-surface-strong);
+  font-size: 0.88em;
+}
+
+.xw-md__preview pre {
+  padding: 12px 14px;
+  border-radius: var(--xw-radius);
+  background: var(--xw-surface-strong);
+  overflow: auto;
+}
+
+.xw-md__preview pre code {
+  padding: 0;
+  background: none;
+}
+
+.xw-md__preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.xw-md__preview th,
+.xw-md__preview td {
+  padding: 8px 12px;
+  border: 1px solid var(--xw-border);
+  text-align: left;
+}
+
+.xw-md__preview img {
+  max-width: 100%;
+}
+
+.xw-md__preview hr {
+  margin: 1.2em 0;
+  border: none;
+  border-top: 1px solid var(--xw-border);
+}

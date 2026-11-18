@@ -1,0 +1,73 @@
+/* 登录 / 两步验证页（按需加载） */
+
+/* ---------- login ---------- */
+
+.site-login {
+  /* 40px + 卡片内 32px，让标题与其他页首行同样落在 145px */
+  padding: 40px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.site-login__panel {
+  width: min(100%, 400px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 32px;
+}
+
+.site-login__title {
+  font-size: 1.6rem;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.site-login__desc {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.site-login__form {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.site-login__error {
+  font-size: 12.5px;
+  color: #c0392b;
+}
+
+[data-theme='dark'] .site-login__error {
+  color: #ff8a7a;
+}
+
+.site-login__submit {
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.site-login__submit:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.site-login__link {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.site-login__link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .site-login__panel {
+    padding: 24px;
+  }
+}

@@ -1,0 +1,338 @@
+/* 表单控件、投稿与状态页（按需加载） */
+
+/* ---------- 表单控件 ---------- */
+
+.site-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.site-field__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+}
+
+.site-field input {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: border-color 120ms ease;
+}
+
+.site-field input:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+/* ---------- submit & feedback ---------- */
+
+.site-form-page {
+  /* 与列表页同宽同左边界，避免切换页面时内容列位移 */
+  max-width: 880px;
+  padding: 72px 0 80px;
+}
+
+.site-form-page__title {
+  margin-top: 8px;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.site-form-page__desc {
+  margin-top: 10px;
+  max-width: 58ch;
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.site-form {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.site-form__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.site-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.site-form__error {
+  font-size: 12.5px;
+  color: #c0392b;
+}
+
+.site-form__error--ok {
+  color: var(--brand-strong);
+}
+
+[data-theme='dark'] .site-form__error {
+  color: #ff8a7a;
+}
+
+[data-theme='dark'] .site-form__error--ok {
+  color: var(--brand);
+}
+
+.site-field textarea,
+.site-field select {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 120ms ease;
+}
+
+.site-field textarea {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.7;
+}
+
+.site-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-image: var(--select-chevron);
+  background-position: right 13px center;
+  background-repeat: no-repeat;
+  background-size: 13px 13px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.site-field select:hover {
+  border-color: var(--ink-muted);
+}
+
+/* 展开后的选项列表跟随主题，避免暗色下白底白字 */
+.site-field select option {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.site-field textarea:focus,
+.site-field select:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.site-field select:focus {
+  border-color: var(--brand-strong);
+  box-shadow: 0 0 0 3px rgba(246, 12, 62, 0.16);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+}
+
+.site-field input::placeholder,
+.site-field textarea::placeholder {
+  color: var(--ink-muted);
+  opacity: 0.7;
+}
+
+.site-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.site-done {
+  margin-top: 28px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.site-done__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.site-done__desc {
+  margin-top: 8px;
+  color: var(--ink-muted);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.site-done .site-form__actions {
+  margin-top: 20px;
+}
+
+.site-feedback {
+  max-width: 720px;
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.site-feedback__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.site-feedback__title {
+  margin-top: 6px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.site-feedback__desc {
+  margin-top: 6px;
+  max-width: 46ch;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.site-feedback__form {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.site-feedback__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.site-feedback__notice {
+  font-size: 12.5px;
+}
+
+.site-feedback__notice--ok {
+  color: var(--brand-strong);
+}
+
+.site-feedback__notice--error {
+  color: #c0392b;
+}
+
+[data-theme='dark'] .site-feedback__notice--error {
+  color: #ff8a7a;
+}
+
+.site-feedback__status-link {
+  color: var(--brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- token status pages ---------- */
+
+.site-status {
+  margin-top: 28px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.site-status__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.site-status__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  word-break: break-word;
+}
+
+.site-status__badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.site-status__badge--done {
+  color: var(--brand-strong);
+}
+
+.site-status__badge--warn {
+  color: #b26a00;
+}
+
+.site-status__badge--muted {
+  color: var(--ink-muted);
+}
+
+[data-theme='dark'] .site-status__badge--warn {
+  color: #f0b35a;
+}
+
+.site-status__list {
+  margin: 0;
+  padding: 8px 0 0;
+}
+
+.site-status__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13.5px;
+}
+
+.site-status__row:last-child {
+  border-bottom: 0;
+}
+
+.site-status__label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.site-status__note {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
