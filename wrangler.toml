@@ -12,14 +12,12 @@ not_found_handling = "none"
 [[d1_databases]]
 binding = "DB"
 database_name = "xwubi"
-# 部署前替换为 `wrangler d1 create xwubi` 返回的真实 id
-database_id = "00000000-0000-0000-0000-000000000001"
+database_id = "71278938-cf52-4949-90ef-c6677c3c8f3b"
 migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "CACHE"
-# 部署前替换为 `wrangler kv namespace create CACHE` 返回的真实 id
-id = "00000000000000000000000000000001"
+id = "2b3096ba7c5f40ab9514b16df490b30f"
 
 [[r2_buckets]]
 binding = "BUCKET"

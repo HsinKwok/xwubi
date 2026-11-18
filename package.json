@@ -11,7 +11,9 @@
     "db:local": "wrangler d1 migrations apply xwubi --local",
     "db:seed": "wrangler d1 execute xwubi --local --file=seeds/dev.sql",
     "hash-password": "node scripts/hash-password.mjs",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "setup:cloudflare": "powershell -ExecutionPolicy Bypass -File scripts/setup-cloudflare.ps1",
+    "deploy:remote": "powershell -ExecutionPolicy Bypass -File scripts/deploy-remote.ps1"
   },
   "dependencies": {
     "hono": "^4.6.14",
