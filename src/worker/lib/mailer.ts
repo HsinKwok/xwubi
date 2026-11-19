@@ -1,4 +1,6 @@
 import type { Env } from './env';
+import { loadSmtpConfig } from './mail-config';
+import { sendSmtpMail } from './smtp';
 
 export interface MailMessage {
   to: string;
@@ -9,11 +11,9 @@ export interface MailMessage {
 
 export interface MailResult {
   sent: boolean;
-  provider: 'resend' | 'console';
+  provider: 'smtp' | 'console';
   error?: string;
 }
-
-const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => {
@@ -30,6 +30,72 @@ function escapeHtml(value: string): string {
         return '&#39;';
     }
   });
+}
+
+function encodeBase64(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+/** 按 RFC 2045 每 76 字符折行，避免长行被邮件网关截断 */
+function wrapBase64(value: string): string {
+  return encodeBase64(value).replace(/(.{76})/g, '$1\r\n');
+}
+
+/** 非 ASCII 头部使用 RFC 2047 base64 编码，并清理换行防止头部注入 */
+function encodeHeader(value: string): string {
+  const cleaned = value.replace(/[\r\n]+/g, ' ').trim();
+  if (/^[\x20-\x7e]*$/.test(cleaned)) return cleaned;
+  return `=?UTF-8?B?${encodeBase64(cleaned)}?=`;
+}
+
+function buildMimeMessage(
+  sender: { from: string; fromName: string },
+  message: MailMessage,
+): string {
+  const to = message.to.replace(/[\r\n]+/g, '').trim();
+  const fromHeader = sender.fromName
+    ? `${encodeHeader(sender.fromName)} <${sender.from}>`
+    : `<${sender.from}>`;
+  const domain = sender.from.split('@')[1] || 'xwubi.com';
+  const headers = [
+    `From: ${fromHeader}`,
+    `To: <${to}>`,
+    `Subject: ${encodeHeader(message.subject)}`,
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${crypto.randomUUID()}@${domain}>`,
+    'MIME-Version: 1.0',
+  ];
+
+  if (!message.html) {
+    return [
+      ...headers,
+      'Content-Type: text/plain; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      wrapBase64(message.text),
+    ].join('\r\n');
+  }
+
+  const boundary = `xwubi-${crypto.randomUUID()}`;
+  return [
+    ...headers,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrapBase64(message.text),
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrapBase64(message.html),
+    `--${boundary}--`,
+  ].join('\r\n');
 }
 
 /** 生成邮件里的站内链接前缀：优先 SITE_ORIGIN，其次当前请求来源 */
@@ -61,44 +127,56 @@ function wrapHtml(title: string, paragraphs: string[], action?: { label: string;
 </body></html>`;
 }
 
+/** 使用系统设置中的 SMTP 配置发信；未配置时打印到日志，避免阻断业务流程 */
 export async function sendMail(env: Env, message: MailMessage): Promise<MailResult> {
-  const apiKey = (env.RESEND_API_KEY ?? '').trim();
-  const from = (env.MAIL_FROM ?? '').trim();
+  const config = await loadSmtpConfig(env);
 
-  if (!apiKey || !from) {
-    console.log(
-      `[mail:console] to=${message.to} subject=${message.subject}\n${message.text}`,
-    );
+  if (!config || !config.enabled || !config.host) {
+    console.log(`[mail:console] to=${message.to} subject=${message.subject}\n${message.text}`);
     return { sent: false, provider: 'console' };
   }
 
   try {
-    const response = await fetch(RESEND_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        'content-type': 'application/json',
+    await sendSmtpMail(
+      {
+        host: config.host,
+        port: config.port,
+        security: config.security,
+        username: config.username,
+        password: config.password,
       },
-      body: JSON.stringify({
-        from,
-        to: [message.to],
-        subject: message.subject,
-        text: message.text,
-        html: message.html,
-      }),
-    });
+      {
+        from: config.from,
+        to: message.to,
+        data: buildMimeMessage({ from: config.from, fromName: config.fromName }, message),
+      },
+    );
 
-    if (!response.ok) {
-      const detail = await response.text().catch(() => '');
-      console.error(`[mail:resend] ${response.status} ${detail.slice(0, 300)}`);
-      return { sent: false, provider: 'resend', error: `邮件发送失败（${response.status}）` };
-    }
-
-    return { sent: true, provider: 'resend' };
+    return { sent: true, provider: 'smtp' };
   } catch (error) {
-    console.error('[mail:resend]', error);
-    return { sent: false, provider: 'resend', error: '邮件服务暂不可用' };
+    console.error('[mail:smtp]', error);
+    const detail = error instanceof Error ? error.message : '未知错误';
+    return { sent: false, provider: 'smtp', error: detail.slice(0, 200) };
   }
+}
+
+/** 系统设置页「发送测试邮件」使用 */
+export function testMail(to: string): MailMessage {
+  const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+  return {
+    to,
+    subject: 'xwubi 邮件服务测试',
+    text: `这是一封来自 xwubi 管理台的测试邮件。
+
+发送时间：${now}
+
+如果收到这封邮件，说明 SMTP 配置可用。`,
+    html: wrapHtml('SMTP 测试邮件', [
+      '这是一封来自 xwubi 管理台的测试邮件。',
+      `发送时间：${escapeHtml(now)}`,
+      '如果收到这封邮件，说明 SMTP 配置可用。',
+    ]),
+  };
 }
 
 export function inviteMail(input: {

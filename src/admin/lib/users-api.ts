@@ -60,6 +60,16 @@ export function inviteStaff(input: { name: string; email: string; role: StaffRol
   return postJson<StaffInviteResponse>('/api/admin/users/invite', input);
 }
 
+/** 由管理员直接创建账号，初始密码由管理员设定，首次登录需修改 */
+export function createStaff(input: {
+  name: string;
+  email: string;
+  role: StaffRole;
+  password: string;
+}) {
+  return postJson<{ item: StaffAccount | null }>('/api/admin/users', input);
+}
+
 export function resendStaffInvite(id: string) {
   return postJson<StaffInviteResponse>(`/api/admin/users/${encodeURIComponent(id)}/invite`, {});
 }

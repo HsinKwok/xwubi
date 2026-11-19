@@ -30,5 +30,5 @@ Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Green
 Write-Host '  1. Copy the returned database_id into wrangler.toml [[d1_databases]]'
 Write-Host '  2. Copy the returned KV id into wrangler.toml [[kv_namespaces]]'
-Write-Host '  3. Optional: npx wrangler secret put RESEND_API_KEY'
+Write-Host '  3. Optional: configure SMTP later in Admin > Settings > Mail Service'
 Write-Host '  4. Deploy: powershell -ExecutionPolicy Bypass -File scripts/deploy-remote.ps1'

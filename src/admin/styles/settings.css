@@ -2,6 +2,50 @@
 
 /* ---------- 系统设置 ---------- */
 
+/* 按功能分类的选项卡 */
+.xw-settings__tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--xw-border);
+  scrollbar-width: thin;
+}
+
+.xw-settings__tab {
+  flex: none;
+  padding: 9px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--xw-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.xw-settings__tab:hover {
+  color: var(--xw-text);
+}
+
+.xw-settings__tab.is-active {
+  color: var(--xw-text);
+  border-bottom-color: var(--xw-text);
+}
+
+.xw-settings__tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.xw-settings__divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--xw-border);
+}
+
 .xw-settings__row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);

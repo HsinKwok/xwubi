@@ -6,7 +6,6 @@ export interface Env {
   ENVIRONMENT?: string;
   SITE_ORIGIN?: string;
   MAIL_FROM?: string;
-  RESEND_API_KEY?: string;
 }
 
 export type StaffRole = 'admin' | 'editor' | 'reviewer' | 'ops';

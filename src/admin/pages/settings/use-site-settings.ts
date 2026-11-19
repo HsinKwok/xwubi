@@ -100,21 +100,24 @@ export function useSiteSettings({ isAdmin, onUnauthorized }: Options) {
     setNotice({ tone: 'error', text: message });
   }
 
-  function switchMode(next: Mode) {
-    if (next === mode) return;
+  /** 切换表单 / JSON 模式；从 JSON 回到表单时若语法错误会返回 false */
+  function switchMode(next: Mode): boolean {
+    if (next === mode) return true;
     setRawError(null);
 
     if (next === 'json') {
       if (config) setRaw(JSON.stringify(config, null, 2));
       setMode('json');
-      return;
+      return true;
     }
 
     try {
       setConfig(JSON.parse(raw) as SiteConfig);
       setMode('form');
+      return true;
     } catch {
       setRawError('JSON 语法错误，修正后才能回到表单模式。');
+      return false;
     }
   }
 

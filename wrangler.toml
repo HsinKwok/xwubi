@@ -31,7 +31,6 @@ bucket_name = "xwubi-media"
 [vars]
 ENVIRONMENT = "development"
 SITE_ORIGIN = "http://localhost:8787"
-# 发件人地址（需在 Resend 完成域名验证）；留空时邮件只打印到控制台，便于本地联调
+# 默认发件人地址；SMTP 服务器与账号密码在后台「系统设置 → 邮件服务」中配置并存入 D1
 MAIL_FROM = ""
-# 生产环境通过 `wrangler secret put RESEND_API_KEY` 配置，不要写在此文件
 

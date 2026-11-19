@@ -59,4 +59,4 @@ Invoke-Wrangler $deployArgs
 
 Write-Host ''
 Write-Host 'Deployed.' -ForegroundColor Green
-Write-Host 'If email features are needed, set the secret once: npx wrangler secret put RESEND_API_KEY'
+Write-Host 'If email features are needed, configure SMTP in Admin > Settings > Mail Service.'

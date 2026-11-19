@@ -97,6 +97,55 @@ usersActionRoutes.post('/invite', requireAdmin, async (c) => {
   );
 });
 
+usersActionRoutes.post('/', requireAdmin, async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const name = asString(body.name).trim();
+  const email = asString(body.email).trim().toLowerCase();
+  const role = asString(body.role);
+  const password = asString(body.password);
+
+  if (name.length < 2 || name.length > 32) {
+    return fail(c, 400, 'invalid_name', '请填写 2-32 个字符的姓名');
+  }
+  if (!EMAIL_PATTERN.test(email)) return fail(c, 400, 'invalid_email', '邮箱格式不正确');
+  if (!STAFF_ROLES.includes(role as StaffRole)) {
+    return fail(c, 400, 'invalid_role', '角色不合法');
+  }
+  const problem = passwordProblem(password);
+  if (problem) return fail(c, 400, 'weak_password', problem);
+
+  const existing = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?')
+    .bind(email)
+    .first<{ id: string }>();
+  if (existing) {
+    return fail(c, 409, 'email_taken', '该邮箱已有账号，可在列表中重置密码或改用邀请');
+  }
+
+  const id = newId('usr');
+  const now = nowIso();
+
+  await c.env.DB.prepare(
+    `INSERT INTO users (id, name, email, role, password_hash, status, must_change_password, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'active', 1, ?, ?)`,
+  )
+    .bind(id, name, email, role, await hashPassword(password), now, now)
+    .run();
+
+  const row = await loadStaff(c, id);
+
+  await writeAudit(c, {
+    action: 'user.create',
+    targetType: 'user',
+    targetId: id,
+    summary: `${name}（${email}）`,
+    diff: { role },
+  });
+
+  return c.json({ item: row ? mapStaff(row) : null }, 201);
+});
+
 usersActionRoutes.post('/:id/invite', requireAdmin, async (c) => {
   const id = c.req.param('id') ?? '';
   const row = await loadStaff(c, id);

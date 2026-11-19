@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from '../../components/icons';
 import { NoticeBar } from '../../components/NoticeBar';
 import { formatDateTime } from '../../lib/format';
@@ -8,6 +9,7 @@ import { HeaderSection } from './HeaderSection';
 import { HomeSectionsSection } from './HomeSectionsSection';
 import { LabelsSection } from './LabelsSection';
 import { NavSection } from './NavSection';
+import { SmtpSection } from './SmtpSection';
 import { useSiteSettings } from './use-site-settings';
 import '../../styles/settings.css';
 
@@ -16,8 +18,20 @@ export interface SettingsPageProps {
   onUnauthorized: () => void;
 }
 
+type SettingsTab = 'brand' | 'home' | 'footer' | 'mail' | 'advanced';
+
+/** 设置按功能分类，避免所有区块堆在同一页 */
+const TABS: Array<{ key: SettingsTab; label: string }> = [
+  { key: 'brand', label: '品牌与导航' },
+  { key: 'home', label: '首页区块' },
+  { key: 'footer', label: '页脚与文案' },
+  { key: 'mail', label: '邮件服务' },
+  { key: 'advanced', label: '高级 JSON' },
+];
+
 export function SettingsPage({ user, onUnauthorized }: SettingsPageProps) {
   const isAdmin = user.role === 'admin';
+  const [tab, setTab] = useState<SettingsTab>('brand');
   const {
     config,
     epoch,
@@ -37,6 +51,22 @@ export function SettingsPage({ user, onUnauthorized }: SettingsPageProps) {
     handleSave,
     reload,
   } = useSiteSettings({ isAdmin, onUnauthorized });
+
+  // 邮件服务涉及 SMTP 凭据，仅管理员可见
+  const tabs = isAdmin ? TABS : TABS.filter((item) => item.key !== 'mail');
+
+  function changeTab(next: SettingsTab) {
+    if (next === tab) return;
+
+    if (next === 'advanced') {
+      switchMode('json');
+      setTab('advanced');
+      return;
+    }
+
+    if (mode === 'json' && !switchMode('form')) return;
+    setTab(next);
+  }
 
   if (loading) {
     return (
@@ -73,7 +103,7 @@ export function SettingsPage({ user, onUnauthorized }: SettingsPageProps) {
           <p className="xw-content__eyebrow">SETTINGS</p>
           <h1 className="xw-content__title">系统设置</h1>
           <p className="xw-content__desc">
-            前台展示全部由这份配置驱动，保存后公共接口会立即切换新配置。
+            前台展示与邮件服务按功能分类管理，保存后公共接口会立即切换新配置。
           </p>
         </div>
 
@@ -82,14 +112,7 @@ export function SettingsPage({ user, onUnauthorized }: SettingsPageProps) {
             查看前台
             <Icon name="external" size={14} />
           </a>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost"
-            onClick={() => switchMode(mode === 'form' ? 'json' : 'form')}
-          >
-            {mode === 'form' ? '高级 JSON' : '返回表单'}
-          </button>
-          {isAdmin && (
+          {isAdmin && tab !== 'mail' && (
             <button
               type="button"
               className="xw-btn xw-btn--primary"
@@ -108,9 +131,52 @@ export function SettingsPage({ user, onUnauthorized }: SettingsPageProps) {
         </div>
       )}
 
+      <nav className="xw-settings__tabs" role="tablist" aria-label="设置分类">
+        {tabs.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            role="tab"
+            aria-selected={tab === item.key}
+            className={`xw-settings__tab${tab === item.key ? ' is-active' : ''}`}
+            onClick={() => changeTab(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
       <NoticeBar notice={notice} />
 
-      {mode === 'json' ? (
+      {tab === 'brand' && (
+        <div className="xw-settings__tab-body">
+          <BrandSection config={config} disabled={!isAdmin} update={update} />
+          <NavSection config={config} disabled={!isAdmin} update={update} />
+          <HeaderSection config={config} disabled={!isAdmin} update={update} />
+        </div>
+      )}
+
+      {tab === 'home' && (
+        <div className="xw-settings__tab-body">
+          <HomeSectionsSection
+            config={config}
+            disabled={!isAdmin}
+            update={update}
+            contentTypes={contentTypes}
+          />
+        </div>
+      )}
+
+      {tab === 'footer' && (
+        <div className="xw-settings__tab-body">
+          <FooterSection config={config} disabled={!isAdmin} update={update} />
+          <LabelsSection config={config} disabled={!isAdmin} update={update} />
+        </div>
+      )}
+
+      {tab === 'mail' && <SmtpSection isAdmin={isAdmin} onUnauthorized={onUnauthorized} />}
+
+      {tab === 'advanced' && (
         <section className="xw-panel">
           <div className="xw-panel__head">
             <h2 className="xw-panel__title">站点配置 JSON</h2>
@@ -133,20 +199,6 @@ export function SettingsPage({ user, onUnauthorized }: SettingsPageProps) {
             </span>
           </div>
         </section>
-      ) : (
-        <>
-          <BrandSection config={config} disabled={!isAdmin} update={update} />
-          <NavSection config={config} disabled={!isAdmin} update={update} />
-          <HeaderSection config={config} disabled={!isAdmin} update={update} />
-          <HomeSectionsSection
-            config={config}
-            disabled={!isAdmin}
-            update={update}
-            contentTypes={contentTypes}
-          />
-          <FooterSection config={config} disabled={!isAdmin} update={update} />
-          <LabelsSection config={config} disabled={!isAdmin} update={update} />
-        </>
       )}
 
       <p className="xw-settings__meta">

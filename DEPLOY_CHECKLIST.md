@@ -33,8 +33,8 @@
 
 - [ ] 部署脚本已带 `--var ENVIRONMENT:production`
 - [ ] 部署脚本已带 `--var SITE_ORIGIN:<正式域名>`（默认 `https://xwubi.hsinkwok.workers.dev`，改用自定义域名时务必覆盖）
-- [ ] 需要邮件功能时已设置：`npx wrangler secret put RESEND_API_KEY`
-- [ ] `MAIL_FROM` 非空且发件域名已在 Resend 验证；不需要发信可留空
+- [ ] 需要邮件功能时，已登录后台「系统设置 → 邮件服务」填写 SMTP 服务器、账号、授权码与发件邮箱并保存
+- [ ] 已点击「发送测试邮件」确认 SMTP 配置可用；未配置时邮件只会打印到 Workers 日志
 - [ ] 自定义域名 / DNS 记录已就绪（若使用）
 - [ ] 登录 Cookie 的 Secure 行为在 HTTPS 域下正常（部署后验证）
 

@@ -4,6 +4,7 @@ import { resolveAdminError } from '../../lib/api';
 import { useAsyncData } from '../../lib/use-async-data';
 import { useSelection } from '../../lib/use-selection';
 import {
+  createStaff,
   deleteStaff,
   deleteStaffBatch,
   inviteStaff,
@@ -15,7 +16,14 @@ import {
 import type { StaffAccount, StaffListResponse, StaffStatus } from '../../lib/users-api';
 import { ROLE_LABELS } from '../../types';
 import type { AdminUser, StaffRole } from '../../types';
-import { EMPTY_STAFF_FORM, type StaffForm, type StaffNotice } from './staff-utils';
+import {
+  EMPTY_CREATE_FORM,
+  EMPTY_STAFF_FORM,
+  randomStaffPassword,
+  type StaffCreateForm,
+  type StaffForm,
+  type StaffNotice,
+} from './staff-utils';
 
 const PER_PAGE = 20;
 
@@ -37,6 +45,10 @@ export function useStaffAccounts({ user, onUnauthorized }: UseStaffAccountsOptio
   const [form, setForm] = useState<StaffForm>(EMPTY_STAFF_FORM);
   const [saving, setSaving] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<StaffCreateForm>(EMPTY_CREATE_FORM);
+  const [createSaving, setCreateSaving] = useState(false);
 
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [resetId, setResetId] = useState<string | null>(null);
@@ -133,6 +145,59 @@ export function useStaffAccounts({ user, onUnauthorized }: UseStaffAccountsOptio
       handleError(caught);
     } finally {
       setSaving(false);
+    }
+  }
+
+  function startInvite() {
+    setCreateOpen(false);
+    setNotice(null);
+    setCreating((open) => !open);
+  }
+
+  function openCreate() {
+    setCreating(false);
+    setInviteLink('');
+    setNotice(null);
+    setCreateForm(EMPTY_CREATE_FORM);
+    setCreateOpen(true);
+  }
+
+  function closeCreate() {
+    setCreateOpen(false);
+    setCreateForm(EMPTY_CREATE_FORM);
+  }
+
+  function updateCreateForm(patch: Partial<StaffCreateForm>) {
+    setCreateForm((current) => ({ ...current, ...patch }));
+  }
+
+  function generateCreatePassword() {
+    setCreateForm((current) => ({ ...current, password: randomStaffPassword() }));
+  }
+
+  async function handleCreate() {
+    if (createSaving) return;
+
+    const name = createForm.name.trim();
+    const email = createForm.email.trim();
+    const password = createForm.password;
+
+    setCreateSaving(true);
+    setNotice(null);
+
+    try {
+      await createStaff({ name, email, role: createForm.role, password });
+      setNotice({
+        tone: 'ok',
+        text: `已创建 ${name}（${email}）的账号，初始密码：${password}。对方首次登录需修改密码。`,
+      });
+      setCreateOpen(false);
+      setCreateForm(EMPTY_CREATE_FORM);
+      reload();
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setCreateSaving(false);
     }
   }
 
@@ -299,6 +364,15 @@ export function useStaffAccounts({ user, onUnauthorized }: UseStaffAccountsOptio
     copyInviteLink,
     handleInvite,
     closeInvite,
+    startInvite,
+    createOpen,
+    createForm,
+    createSaving,
+    openCreate,
+    closeCreate,
+    updateCreateForm,
+    generateCreatePassword,
+    handleCreate,
     pendingId,
     resetId,
     resetPassword,

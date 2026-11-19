@@ -4,6 +4,7 @@ import { Pager } from '../../components/Pager';
 import { STAFF_STATUSES, STAFF_STATUS_LABELS } from '../../lib/users-api';
 import { STAFF_ROLES, ROLE_LABELS } from '../../types';
 import type { AdminUser } from '../../types';
+import { StaffCreatePanel } from './StaffCreatePanel';
 import { StaffInvitePanel } from './StaffInvitePanel';
 import { StaffTable } from './StaffTable';
 import { useStaffAccounts } from './use-staff-accounts';
@@ -98,13 +99,17 @@ export function StaffPanel({ user, onUnauthorized }: StaffPanelProps) {
         </span>
         <button
           type="button"
-          className="xw-btn xw-btn--primary xw-btn--sm"
-          onClick={() => {
-            state.setCreating((open) => !open);
-            state.setNotice(null);
-          }}
+          className="xw-btn xw-btn--ghost xw-btn--sm"
+          onClick={state.startInvite}
         >
-          {state.creating ? '收起表单' : '邀请员工'}
+          {state.creating ? '收起邀请' : '邀请员工'}
+        </button>
+        <button
+          type="button"
+          className="xw-btn xw-btn--primary xw-btn--sm"
+          onClick={state.openCreate}
+        >
+          新建账号
         </button>
       </div>
 
@@ -119,6 +124,16 @@ export function StaffPanel({ user, onUnauthorized }: StaffPanelProps) {
         onSubmit={state.handleInvite}
         onCancel={state.closeInvite}
         onCopyLink={state.copyInviteLink}
+      />
+
+      <StaffCreatePanel
+        open={state.createOpen}
+        form={state.createForm}
+        saving={state.createSaving}
+        onChange={state.updateCreateForm}
+        onGeneratePassword={state.generateCreatePassword}
+        onSubmit={state.handleCreate}
+        onCancel={state.closeCreate}
       />
 
       <StaffTable
