@@ -1,5 +1,6 @@
 const encoder = new TextEncoder();
-const PBKDF2_ITERATIONS = 210000;
+// Workers 运行时限制 PBKDF2 迭代次数不超过 100000
+const PBKDF2_ITERATIONS = 100000;
 const KEY_BYTES = 32;
 
 export function encodeBase64Url(bytes: Uint8Array): string {
@@ -40,7 +41,7 @@ async function deriveBits(password: string, salt: Uint8Array, iterations: number
   return new Uint8Array(bits);
 }
 
-/** 存储格式：pbkdf2$sha256$210000$salt$hash（均为 base64url） */
+/** 存储格式：pbkdf2$sha256$100000$salt$hash（均为 base64url） */
 export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const hash = await deriveBits(password, salt, PBKDF2_ITERATIONS);

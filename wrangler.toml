@@ -17,12 +17,12 @@ not_found_handling = "none"
 [[d1_databases]]
 binding = "DB"
 database_name = "xwubi"
-database_id = "71278938-cf52-4949-90ef-c6677c3c8f3b"
+database_id = "1be7ad9f-9df9-4d7f-a5d8-080c69bb664e"
 migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "2b3096ba7c5f40ab9514b16df490b30f"
+id = "cddc92f8d2024f8497f8accea91e6aea"
 
 [[r2_buckets]]
 binding = "BUCKET"
