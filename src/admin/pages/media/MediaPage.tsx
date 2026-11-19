@@ -1,4 +1,6 @@
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
+import { Pager } from '../../components/Pager';
 import type { AdminUser } from '../../types';
 import { contentVersionOptions } from '../../lib/versions';
 import { MediaEditModal } from './MediaEditModal';
@@ -47,7 +49,15 @@ export function MediaPage({ user, onUnauthorized }: MediaPageProps) {
     openEdit,
     saveEdit,
     remove,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    batchDeleting,
+    deleteSelected,
   } = useMediaLibrary({ canWrite, onUnauthorized });
+
+  const allSelected =
+    items.length > 0 && items.every((item) => selectedIds.includes(item.id));
 
   return (
     <div className="xw-content">
@@ -61,18 +71,7 @@ export function MediaPage({ user, onUnauthorized }: MediaPageProps) {
         </div>
       </header>
 
-      {notice && (
-        <div className={`xw-notice xw-notice--${notice.kind}`} role="status">
-          <span>{notice.text}</span>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            onClick={() => setNotice(null)}
-          >
-            关闭
-          </button>
-        </div>
-      )}
+      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
 
       <MediaUploadDrop canWrite={canWrite} uploading={uploading} onFiles={handleFiles} />
 
@@ -103,6 +102,28 @@ export function MediaPage({ user, onUnauthorized }: MediaPageProps) {
         </select>
 
         <span className="xw-toolbar__spacer" />
+        {canDelete && (
+          <label className="xw-check-line">
+            <input
+              type="checkbox"
+              className="xw-check"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              disabled={items.length === 0}
+            />
+            全选本页
+          </label>
+        )}
+        {canDelete && selectedIds.length > 0 && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger xw-btn--sm"
+            disabled={batchDeleting}
+            onClick={() => void deleteSelected()}
+          >
+            {batchDeleting ? '删除中…' : `批量删除（${selectedIds.length}）`}
+          </button>
+        )}
         <span className="xw-toolbar__count">{loading ? '加载中…' : `共 ${total} 张`}</span>
       </div>
 
@@ -134,35 +155,16 @@ export function MediaPage({ user, onUnauthorized }: MediaPageProps) {
           canWrite={canWrite}
           canDelete={canDelete}
           deletingId={deletingId}
+          selectable={canDelete}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
           onCopy={(item) => void copyUrl(item)}
           onEdit={openEdit}
           onDelete={(item) => void remove(item)}
         />
       )}
 
-      <div className="xw-page-foot">
-        <span>
-          第 {page} / {totalPages} 页
-        </span>
-        <div className="xw-page-foot__actions">
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            上一页
-          </button>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            disabled={page >= totalPages || loading}
-            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-          >
-            下一页
-          </button>
-        </div>
-      </div>
+      <Pager page={page} totalPages={totalPages} loading={loading} onChange={setPage} />
 
       {editing && (
         <MediaEditModal

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
 import { useAsyncData } from '../../lib/use-async-data';
 import { listCategories } from '../../lib/categories-api';
 import type { CategoryItem } from '../../lib/categories-api';
@@ -112,18 +113,7 @@ export function CategoriesPage({ user, onUnauthorized }: CategoriesPageProps) {
         </div>
       </header>
 
-      {notice && (
-        <div className={`xw-notice xw-notice--${notice.kind}`} role="status">
-          <span>{notice.text}</span>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            onClick={() => setNotice(null)}
-          >
-            关闭
-          </button>
-        </div>
-      )}
+      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
 
       <div className="xw-tabs" role="tablist">
         {GROUPS.map((item) => (

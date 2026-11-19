@@ -12,6 +12,7 @@ export interface EditorHeaderProps {
   itemRoute: string | undefined;
   dirty: boolean;
   pending: string | null;
+  deleting: boolean;
   canEdit: boolean;
   canReview: boolean;
   onGo: (event: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
@@ -20,6 +21,7 @@ export interface EditorHeaderProps {
   onPublish: () => void;
   onUnpublish: () => void;
   onArchive: () => void;
+  onDelete: () => void;
 }
 
 export function EditorHeader({
@@ -29,6 +31,7 @@ export function EditorHeader({
   itemRoute,
   dirty,
   pending,
+  deleting,
   canEdit,
   canReview,
   onGo,
@@ -37,6 +40,7 @@ export function EditorHeader({
   onPublish,
   onUnpublish,
   onArchive,
+  onDelete,
 }: EditorHeaderProps) {
   return (
     <header className="xw-editor__head">
@@ -127,6 +131,17 @@ export function EditorHeader({
             onClick={onArchive}
           >
             归档
+          </button>
+        )}
+
+        {canEdit && item && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger"
+            disabled={pending !== null || deleting}
+            onClick={onDelete}
+          >
+            {deleting ? '删除中…' : '删除'}
           </button>
         )}
       </div>

@@ -1,6 +1,8 @@
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
 import { SUBMISSION_STATUSES } from '../../lib/inbox-api';
-import { SUBMISSION_STATUS_LABELS, Pager } from './inbox-shared';
+import { SUBMISSION_STATUS_LABELS } from './inbox-shared';
+import { Pager } from '../../components/Pager';
 import { SubmissionCard } from './SubmissionCard';
 import { useSubmissions } from './use-submissions';
 
@@ -21,10 +23,19 @@ export function SubmissionsPanel({ onUnauthorized }: { onUnauthorized: () => voi
     changeStatus,
     toggleReject,
     cancelReject,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    deletingId,
+    deletingBatch,
+    deleteOne,
+    deleteSelected,
   } = useSubmissions({ onUnauthorized });
 
   const items = data?.items ?? [];
   const counts = data?.counts ?? {};
+  const allSelected =
+    items.length > 0 && items.every((item) => selectedIds.includes(item.id));
 
   return (
     <>
@@ -42,7 +53,29 @@ export function SubmissionsPanel({ onUnauthorized }: { onUnauthorized: () => voi
             </option>
           ))}
         </select>
+
+        <label className="xw-check-line">
+          <input
+            type="checkbox"
+            className="xw-check"
+            checked={allSelected}
+            onChange={toggleSelectAll}
+            disabled={items.length === 0}
+          />
+          全选本页
+        </label>
+
         <span className="xw-toolbar__spacer" />
+        {selectedIds.length > 0 && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger xw-btn--sm"
+            disabled={deletingBatch}
+            onClick={() => void deleteSelected()}
+          >
+            {deletingBatch ? '删除中…' : `批量删除（${selectedIds.length}）`}
+          </button>
+        )}
         <span className="xw-toolbar__count">
           {loading ? '加载中…' : `投稿 ${data?.total ?? 0} 条`}
         </span>
@@ -57,11 +90,7 @@ export function SubmissionsPanel({ onUnauthorized }: { onUnauthorized: () => voi
         </button>
       </div>
 
-      {notice && (
-        <div className={`xw-notice xw-notice--${notice.tone}`} role="status">
-          {notice.text}
-        </div>
-      )}
+      <NoticeBar notice={notice} />
 
       {error ? (
         <div className="xw-panel">
@@ -93,6 +122,10 @@ export function SubmissionsPanel({ onUnauthorized }: { onUnauthorized: () => voi
               pending={pending}
               rejecting={rejectingId === item.id}
               rejectNote={rejectNote}
+              selected={selectedIds.includes(item.id)}
+              deleting={deletingId === item.id}
+              onToggleSelect={() => toggleSelect(item.id)}
+              onDelete={() => void deleteOne(item)}
               onChangeRejectNote={setRejectNote}
               onStatus={(next) => void changeStatus(item, next)}
               onReject={() => void changeStatus(item, 'rejected', rejectNote.trim())}
@@ -104,7 +137,13 @@ export function SubmissionsPanel({ onUnauthorized }: { onUnauthorized: () => voi
       )}
 
       {data && (
-        <Pager total={data.total} page={data.page} perPage={data.per_page} onChange={setPage} />
+        <Pager
+          page={data.page}
+          totalPages={Math.max(1, Math.ceil(data.total / data.per_page))}
+          total={data.total}
+          hideOnSinglePage
+          onChange={setPage}
+        />
       )}
     </>
   );

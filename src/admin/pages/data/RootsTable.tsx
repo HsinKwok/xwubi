@@ -9,12 +9,22 @@ export interface RootsTableProps {
   items: WubiRootItem[];
   canWrite: boolean;
   loading: boolean;
+  selectedIds: string[];
+  onToggleSelect: (id: string) => void;
   onUpdate: (id: string, input: RootDraft) => Promise<void>;
   onDelete: (item: WubiRootItem) => Promise<void>;
 }
 
 /** 字根表：行内编辑键位、口诀、字根与备注 */
-export function RootsTable({ items, canWrite, loading, onUpdate, onDelete }: RootsTableProps) {
+export function RootsTable({
+  items,
+  canWrite,
+  loading,
+  selectedIds,
+  onToggleSelect,
+  onUpdate,
+  onDelete,
+}: RootsTableProps) {
   const { editingId, draft, savingId, deletingId, startEdit, cancelEdit, patchDraft, runSave, runDelete } =
     useRowEditor<RootDraft>(EMPTY_ROOT_EDIT);
 
@@ -23,6 +33,9 @@ export function RootsTable({ items, canWrite, loading, onUpdate, onDelete }: Roo
       <table className="xw-table">
         <thead>
           <tr>
+            <th className="xw-table__check">
+              <span className="xw-table__check-box" aria-hidden="true" />
+            </th>
             <th>键位</th>
             <th>口诀</th>
             <th>字根</th>
@@ -35,6 +48,14 @@ export function RootsTable({ items, canWrite, loading, onUpdate, onDelete }: Roo
             const editing = editingId === item.id;
             return (
               <tr key={item.id}>
+                <td className="xw-table__check">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => onToggleSelect(item.id)}
+                    aria-label={`选择 ${item.key} 键字根`}
+                  />
+                </td>
                 <td>
                   {editing ? (
                     <input

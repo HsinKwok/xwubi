@@ -1,4 +1,4 @@
-// 集合页数据加载：筛选条件、分页追加与错误重试
+// 集合页数据加载：筛选条件、游标追加与错误重试
 import { useEffect, useMemo, useState } from 'react';
 import type {
   BootstrapPayload,
@@ -29,7 +29,10 @@ export function useCollectionList({ boot, type, version }: Options) {
     return initial;
   });
   const [items, setItems] = useState<PublicContentItem[]>([]);
+  // 新闻/软件等持续增长的列表用游标；教学按课次且条数有限，继续用 page
+  const [cursor, setCursor] = useState<string | null>(null);
   const [pageNo, setPageNo] = useState(1);
+  const firstPage = cursor === null && pageNo === 1;
 
   const filterQuery = filterKeys.map((key) => `${key}=${filters[key] ?? ''}`).join('&');
 
@@ -38,13 +41,15 @@ export function useCollectionList({ boot, type, version }: Options) {
   }, [filterQuery]);
 
   const pageUrl = useMemo(() => {
-    const params = new URLSearchParams({ type, version, page: String(pageNo) });
+    const params = new URLSearchParams({ type, version });
+    if (cursor) params.set('cursor', cursor);
+    else params.set('page', String(pageNo));
     for (const key of filterKeys) {
       const value = filters[key];
       if (value) params.set(key, value);
     }
     return `/api/site/collection?${params.toString()}`;
-  }, [type, version, pageNo, filterQuery]);
+  }, [type, version, cursor, pageNo, filterQuery]);
 
   // 首页替换列表，后续页追加，避免整页闪动
   const { data, loading, error, reload } = useSiteResource<CollectionPayload>({
@@ -52,21 +57,30 @@ export function useCollectionList({ boot, type, version }: Options) {
     ttlMs: 60_000,
     fallback: boot.labels.errorTitle ?? '加载失败',
     onSuccess: (payload) => {
-      setItems((previous) => (pageNo === 1 ? payload.items : [...previous, ...payload.items]));
+      setItems((previous) => (firstPage ? payload.items : [...previous, ...payload.items]));
     },
   });
 
-  function selectFilter(key: string, value: string) {
-    setFilters((previous) => ({ ...previous, [key]: value }));
+  function reset() {
+    setCursor(null);
     setPageNo(1);
   }
 
+  function selectFilter(key: string, value: string) {
+    setFilters((previous) => ({ ...previous, [key]: value }));
+    reset();
+  }
+
   function retry() {
-    setPageNo(1);
+    reset();
     reload();
   }
 
   function loadMore() {
+    if (data?.next_cursor) {
+      setCursor(data.next_cursor);
+      return;
+    }
     setPageNo((current) => current + 1);
   }
 
@@ -75,8 +89,8 @@ export function useCollectionList({ boot, type, version }: Options) {
     data,
     items,
     error,
-    loading: loading && pageNo === 1,
-    loadingMore: loading && pageNo > 1,
+    loading: loading && firstPage,
+    loadingMore: loading && !firstPage,
     filters,
     pageFilters: data?.page?.filters ?? [],
     versionLabel: formatVersionLabel(version, boot.versions, boot.labels),

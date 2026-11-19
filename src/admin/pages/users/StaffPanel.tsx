@@ -1,4 +1,6 @@
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
+import { Pager } from '../../components/Pager';
 import { STAFF_STATUSES, STAFF_STATUS_LABELS } from '../../lib/users-api';
 import { STAFF_ROLES, ROLE_LABELS } from '../../types';
 import type { AdminUser } from '../../types';
@@ -16,6 +18,10 @@ export function StaffPanel({ user, onUnauthorized }: StaffPanelProps) {
   const state = useStaffAccounts({ user, onUnauthorized });
   const counts = state.data?.counts ?? {};
   const items = state.data?.items ?? [];
+  const selectableItems = items.filter((item) => item.id !== user.id);
+  const allSelected =
+    selectableItems.length > 0 &&
+    selectableItems.every((item) => state.selectedIds.includes(item.id));
 
   return (
     <>
@@ -65,7 +71,28 @@ export function StaffPanel({ user, onUnauthorized }: StaffPanelProps) {
           ))}
         </select>
 
+        <label className="xw-check-line">
+          <input
+            type="checkbox"
+            className="xw-check"
+            checked={allSelected}
+            onChange={state.toggleSelectAll}
+            disabled={selectableItems.length === 0}
+          />
+          全选本页
+        </label>
+
         <span className="xw-toolbar__spacer" />
+        {state.selectedIds.length > 0 && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger xw-btn--sm"
+            disabled={state.deletingBatch}
+            onClick={() => void state.deleteSelected()}
+          >
+            {state.deletingBatch ? '删除中…' : `批量删除（${state.selectedIds.length}）`}
+          </button>
+        )}
         <span className="xw-toolbar__count">
           {state.loading ? '加载中…' : `账号 ${state.total} 个`}
         </span>
@@ -81,11 +108,7 @@ export function StaffPanel({ user, onUnauthorized }: StaffPanelProps) {
         </button>
       </div>
 
-      {state.notice && (
-        <div className={`xw-notice xw-notice--${state.notice.tone}`} role="status">
-          {state.notice.text}
-        </div>
-      )}
+      <NoticeBar notice={state.notice} />
 
       <StaffInvitePanel
         creating={state.creating}
@@ -105,6 +128,10 @@ export function StaffPanel({ user, onUnauthorized }: StaffPanelProps) {
         error={state.error}
         hasFilters={state.hasFilters}
         pendingId={state.pendingId}
+        selectedIds={state.selectedIds}
+        deletingId={state.deletingId}
+        onToggleSelect={state.toggleSelect}
+        onDelete={state.deleteOne}
         resetId={state.resetId}
         resetPassword={state.resetPassword}
         onReload={state.reload}
@@ -117,31 +144,14 @@ export function StaffPanel({ user, onUnauthorized }: StaffPanelProps) {
         onResendInvite={state.handleResendInvite}
       />
 
-      {state.total > state.perPage && (
-        <div className="xw-page-foot">
-          <span>
-            共 {state.total} 个 · 第 {state.page} / {state.totalPages} 页
-          </span>
-          <div className="xw-page-foot__actions">
-            <button
-              type="button"
-              className="xw-btn xw-btn--ghost xw-btn--sm"
-              disabled={state.page <= 1}
-              onClick={() => state.setPage(state.page - 1)}
-            >
-              上一页
-            </button>
-            <button
-              type="button"
-              className="xw-btn xw-btn--ghost xw-btn--sm"
-              disabled={state.page >= state.totalPages}
-              onClick={() => state.setPage(state.page + 1)}
-            >
-              下一页
-            </button>
-          </div>
-        </div>
-      )}
+      <Pager
+        page={state.page}
+        totalPages={state.totalPages}
+        total={state.total}
+        unit="个"
+        hideOnSinglePage
+        onChange={state.setPage}
+      />
     </>
   );
 }

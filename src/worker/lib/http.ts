@@ -56,7 +56,9 @@ export interface PageParams {
 
 /** 统一解析分页参数，避免各接口重复实现 */
 export function readPageParams(url: URL, defaultPerPage = 20): PageParams {
-  const page = clampInt(url.searchParams.get('page'), 1, 999, 1);
-  const perPage = clampInt(url.searchParams.get('per_page'), 1, 100, defaultPerPage);
+  // 参数缺省时 Number(null) === 0，会被 clampInt 夹到最小值 1，
+  // 这里先回退到默认值，避免没传 per_page 时每页只剩 1 条。
+  const page = clampInt(url.searchParams.get('page') || 1, 1, 999, 1);
+  const perPage = clampInt(url.searchParams.get('per_page') || defaultPerPage, 1, 100, defaultPerPage);
   return { page, perPage, offset: (page - 1) * perPage };
 }

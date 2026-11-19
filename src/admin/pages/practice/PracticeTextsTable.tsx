@@ -1,3 +1,4 @@
+import { Pager } from '../../components/Pager';
 import { formatStamp } from '../../lib/format';
 import type { PracticeTextSummary } from '../../lib/practice-api';
 
@@ -7,6 +8,8 @@ interface PracticeTextsTableProps {
   canWrite: boolean;
   saving: boolean;
   deletingId: string | null;
+  selectedIds: string[];
+  onToggleSelect: (id: string) => void;
   pageStart: number;
   currentPage: number;
   totalPages: number;
@@ -25,6 +28,8 @@ export function PracticeTextsTable({
   canWrite,
   saving,
   deletingId,
+  selectedIds,
+  onToggleSelect,
   pageStart,
   currentPage,
   totalPages,
@@ -41,6 +46,9 @@ export function PracticeTextsTable({
         <table className="xw-table">
           <thead>
             <tr>
+              <th className="xw-table__check">
+                <span className="xw-table__check-box" aria-hidden="true" />
+              </th>
               <th>标题</th>
               <th>朝代 / 作者</th>
               <th>分类</th>
@@ -53,6 +61,14 @@ export function PracticeTextsTable({
           <tbody>
             {items.map((item) => (
               <tr key={item.id}>
+                <td className="xw-table__check">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => onToggleSelect(item.id)}
+                    aria-label={`选择《${item.title}》`}
+                  />
+                </td>
                 <td>
                   <span className="xw-table__title">{item.title}</span>
                 </td>
@@ -75,7 +91,7 @@ export function PracticeTextsTable({
                         </button>
                         <button
                           type="button"
-                          className="xw-btn xw-btn--ghost xw-btn--sm"
+                          className="xw-btn xw-btn--danger xw-btn--sm"
                           disabled={deletingId === item.id}
                           onClick={() => onDelete(item)}
                         >
@@ -93,32 +109,12 @@ export function PracticeTextsTable({
         </table>
       </div>
 
-      <div className="xw-pager">
-        <span className="xw-pager__info">
-          {`第 ${pageStart + 1}-${pageStart + items.length} 条 / 共 ${total} 条`}
-        </span>
-        <div className="xw-pager__nav">
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            disabled={currentPage === 1}
-            onClick={onPrev}
-          >
-            上一页
-          </button>
-          <span className="xw-pager__info">
-            第 {currentPage} / {totalPages} 页
-          </span>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            disabled={currentPage === totalPages}
-            onClick={onNext}
-          >
-            下一页
-          </button>
-        </div>
-      </div>
+      <Pager
+        page={currentPage}
+        totalPages={totalPages}
+        infoText={`第 ${pageStart + 1}-${pageStart + items.length} 条 / 共 ${total} 条`}
+        onChange={(next) => (next < currentPage ? onPrev() : onNext())}
+      />
     </>
   );
 }

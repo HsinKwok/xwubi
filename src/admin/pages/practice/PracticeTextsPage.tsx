@@ -1,4 +1,5 @@
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
 import type { AdminUser } from '../../types';
 import { PracticeTextEditor } from './PracticeTextEditor';
 import { PracticeTextsTable } from './PracticeTextsTable';
@@ -41,7 +42,15 @@ export function PracticeTextsPage({ user, onUnauthorized }: PracticeTextsPagePro
     startEdit,
     handleSave,
     handleDelete,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    batchDeleting,
+    deleteSelected,
   } = usePracticeTexts({ canWrite, onUnauthorized });
+
+  const allSelected =
+    pageItems.length > 0 && pageItems.every((item) => selectedIds.includes(item.id));
 
   return (
     <div className="xw-content">
@@ -55,18 +64,7 @@ export function PracticeTextsPage({ user, onUnauthorized }: PracticeTextsPagePro
         </div>
       </header>
 
-      {notice && (
-        <div className={`xw-notice xw-notice--${notice.kind}`} role="status">
-          <span>{notice.text}</span>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            onClick={() => setNotice(null)}
-          >
-            关闭
-          </button>
-        </div>
-      )}
+      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
 
       {editor && (
         <PracticeTextEditor
@@ -105,6 +103,28 @@ export function PracticeTextsPage({ user, onUnauthorized }: PracticeTextsPagePro
         </select>
 
         <span className="xw-toolbar__spacer" />
+        {canWrite && (
+          <label className="xw-check-line">
+            <input
+              type="checkbox"
+              className="xw-check"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              disabled={pageItems.length === 0}
+            />
+            全选本页
+          </label>
+        )}
+        {canWrite && selectedIds.length > 0 && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger xw-btn--sm"
+            disabled={batchDeleting}
+            onClick={() => void deleteSelected()}
+          >
+            {batchDeleting ? '删除中…' : `批量删除（${selectedIds.length}）`}
+          </button>
+        )}
         <span className="xw-toolbar__count">
           {loading ? '加载中…' : `共 ${filtered.length} 篇`}
           {!loading && filtered.length !== items.length ? ` / 全部 ${items.length} 篇` : ''}
@@ -153,6 +173,8 @@ export function PracticeTextsPage({ user, onUnauthorized }: PracticeTextsPagePro
           canWrite={canWrite}
           saving={saving}
           deletingId={deletingId}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
           pageStart={pageStart}
           currentPage={currentPage}
           totalPages={totalPages}

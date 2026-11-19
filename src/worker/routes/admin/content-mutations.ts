@@ -9,3 +9,4 @@ export {
   unpublishContent,
 } from './content-status';
 export { restoreContentRevision } from './content-revisions';
+export { deleteContentRows } from './content-delete';

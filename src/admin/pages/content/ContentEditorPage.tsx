@@ -1,5 +1,6 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Icon } from '../../components/icons';
+import '../../styles/content.css';
 import type { AdminUser } from '../../types';
 import { EditorHeader } from './EditorHeader';
 import { EditorMainPanels } from './EditorMainPanels';
@@ -33,6 +34,7 @@ export function ContentEditorPage({ user, id, onNavigate, onUnauthorized }: Cont
     notice,
     problems,
     conflict,
+    deleting,
     canEdit,
     canReview,
     dirty,
@@ -47,6 +49,7 @@ export function ContentEditorPage({ user, id, onNavigate, onUnauthorized }: Cont
     handlePublish,
     handleTransition,
     handleVerify,
+    handleDelete,
   } = useContentEditor({ user, id, onNavigate, onUnauthorized });
 
   function go(event: ReactMouseEvent<HTMLAnchorElement>, href: string) {
@@ -120,6 +123,7 @@ export function ContentEditorPage({ user, id, onNavigate, onUnauthorized }: Cont
         itemRoute={itemRoute}
         dirty={dirty}
         pending={pending}
+        deleting={deleting}
         canEdit={canEdit}
         canReview={canReview}
         onGo={go}
@@ -128,6 +132,7 @@ export function ContentEditorPage({ user, id, onNavigate, onUnauthorized }: Cont
         onPublish={handlePublish}
         onUnpublish={() => handleTransition('unpublish')}
         onArchive={() => handleTransition('archive')}
+        onDelete={handleDelete}
       />
 
       {!canEdit && item && (

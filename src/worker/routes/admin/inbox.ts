@@ -101,6 +101,70 @@ inboxRoutes.patch('/submissions/:id', requireInbox, async (c) => {
   return c.json({ ok: true, status });
 });
 
+function readIds(body: Record<string, unknown> | null): string[] {
+  if (!body || !Array.isArray(body.ids)) return [];
+  return [
+    ...new Set(
+      body.ids.filter((item): item is string => typeof item === 'string' && item.trim().length > 0),
+    ),
+  ];
+}
+
+inboxRoutes.delete('/submissions/:id', requireInbox, async (c) => {
+  const id = c.req.param('id') ?? '';
+  const row = await c.env.DB.prepare('SELECT id, title FROM submissions WHERE id = ?')
+    .bind(id)
+    .first<{ id: string; title: string }>();
+  if (!row) return fail(c, 404, 'submission_not_found', '投稿不存在');
+
+  await c.env.DB.prepare('DELETE FROM submissions WHERE id = ?').bind(id).run();
+
+  await writeAudit(c, {
+    action: 'submission.delete',
+    targetType: 'submission',
+    targetId: id,
+    summary: row.title,
+  });
+
+  return c.json({ ok: true });
+});
+
+inboxRoutes.post('/submissions/batch-delete', requireInbox, async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const ids = readIds(body);
+  if (ids.length === 0) return fail(c, 400, 'invalid_request', '请选择要删除的投稿');
+  if (ids.length > 100) return fail(c, 400, 'invalid_request', '一次最多删除 100 条投稿');
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const found = await c.env.DB.prepare(
+    `SELECT id, title FROM submissions WHERE id IN (${placeholders})`,
+  )
+    .bind(...ids)
+    .all<{ id: string; title: string }>();
+  const rows = found.results ?? [];
+  if (rows.length === 0) return fail(c, 404, 'submission_not_found', '投稿不存在');
+
+  const rowIds = rows.map((row) => row.id);
+  await c.env.DB.prepare(
+    `DELETE FROM submissions WHERE id IN (${rowIds.map(() => '?').join(', ')})`,
+  )
+    .bind(...rowIds)
+    .run();
+
+  for (const row of rows) {
+    await writeAudit(c, {
+      action: 'submission.delete',
+      targetType: 'submission',
+      targetId: row.id,
+      summary: row.title,
+    });
+  }
+
+  return c.json({ ok: true, deleted: rows.length });
+});
+
 inboxRoutes.get('/feedback', requireInbox, async (c) => {
   const url = new URL(c.req.url);
   const conditions: string[] = [];
@@ -179,4 +243,59 @@ inboxRoutes.patch('/feedback/:id', requireInbox, async (c) => {
   });
 
   return c.json({ ok: true, status });
+});
+
+inboxRoutes.delete('/feedback/:id', requireInbox, async (c) => {
+  const id = c.req.param('id') ?? '';
+  const row = await c.env.DB.prepare('SELECT id, page_url FROM feedback WHERE id = ?')
+    .bind(id)
+    .first<{ id: string; page_url: string }>();
+  if (!row) return fail(c, 404, 'feedback_not_found', '纠错记录不存在');
+
+  await c.env.DB.prepare('DELETE FROM feedback WHERE id = ?').bind(id).run();
+
+  await writeAudit(c, {
+    action: 'feedback.delete',
+    targetType: 'feedback',
+    targetId: id,
+    summary: row.page_url,
+  });
+
+  return c.json({ ok: true });
+});
+
+inboxRoutes.post('/feedback/batch-delete', requireInbox, async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const ids = readIds(body);
+  if (ids.length === 0) return fail(c, 400, 'invalid_request', '请选择要删除的纠错记录');
+  if (ids.length > 100) return fail(c, 400, 'invalid_request', '一次最多删除 100 条纠错记录');
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const found = await c.env.DB.prepare(
+    `SELECT id, page_url FROM feedback WHERE id IN (${placeholders})`,
+  )
+    .bind(...ids)
+    .all<{ id: string; page_url: string }>();
+  const rows = found.results ?? [];
+  if (rows.length === 0) return fail(c, 404, 'feedback_not_found', '纠错记录不存在');
+
+  const rowIds = rows.map((row) => row.id);
+  await c.env.DB.prepare(
+    `DELETE FROM feedback WHERE id IN (${rowIds.map(() => '?').join(', ')})`,
+  )
+    .bind(...rowIds)
+    .run();
+
+  for (const row of rows) {
+    await writeAudit(c, {
+      action: 'feedback.delete',
+      targetType: 'feedback',
+      targetId: row.id,
+      summary: row.page_url,
+    });
+  }
+
+  return c.json({ ok: true, deleted: rows.length });
 });

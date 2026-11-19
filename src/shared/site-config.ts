@@ -262,6 +262,8 @@ export interface CollectionPayload {
   total: number;
   /** 每页条数；合集页据此判断是否还能「加载更多」 */
   per_page?: number;
+  /** 下一页游标；教学等固定长度列表为 null，继续按 page 翻页 */
+  next_cursor?: string | null;
 }
 
 /** GET /api/site/content/:type/:slug */

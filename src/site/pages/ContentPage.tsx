@@ -3,7 +3,7 @@ import type { BootstrapPayload, ContentPayload } from '../../shared/site-config'
 import { ErrorState, PageSkeleton } from '../components/Bits';
 import { FeedbackForm } from '../components/FeedbackForm';
 import { formatDate, versionLabel } from '../lib/format';
-import { renderMarkdown } from '../lib/markdown';
+import { renderMarkdown, stripDuplicateTitle } from '../lib/markdown';
 import { useSiteResource } from '../lib/use-site-resource';
 import '../styles/article.css';
 import '../styles/forms.css';
@@ -25,18 +25,16 @@ export function ContentPage({ boot, type, slug, version }: ContentPageProps) {
 
   // 正文渲染放在数据到位后执行，换条目/重试时会取消上一次渲染，避免旧内容覆盖新内容
   useEffect(() => {
-    setHtml('');
-    if (!data) return;
-    let cancelled = false;
-    renderMarkdown(data.item.body_md)
-      .then((rendered) => {
-        if (!cancelled && typeof rendered === 'string') setHtml(rendered);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+    setHtml(
+      data ? renderMarkdown(stripDuplicateTitle(data.item.body_md, data.item.title)) : '',
+    );
   }, [data]);
+
+  // 预渲染已写入条目标题，数据到位后保持一致；离开内容页时由 App 恢复站点标题
+  useEffect(() => {
+    if (!data) return;
+    document.title = `${data.item.title} · ${boot.brand.name}`;
+  }, [data, boot.brand.name]);
 
   const collectionHref = boot.nav.find((item) => item.collection === type)?.href ?? '/';
   const itemVersionLabel = data ? versionLabel(data.item.version, boot.versions, boot.labels) : '';

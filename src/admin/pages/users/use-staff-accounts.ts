@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { toQueryString } from '../../../shared/query';
 import { resolveAdminError } from '../../lib/api';
 import { useAsyncData } from '../../lib/use-async-data';
+import { useSelection } from '../../lib/use-selection';
 import {
+  deleteStaff,
+  deleteStaffBatch,
   inviteStaff,
   listStaff,
   resendStaffInvite,
@@ -38,6 +41,8 @@ export function useStaffAccounts({ user, onUnauthorized }: UseStaffAccountsOptio
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [resetId, setResetId] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingBatch, setDeletingBatch] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -54,14 +59,30 @@ export function useStaffAccounts({ user, onUnauthorized }: UseStaffAccountsOptio
     page,
     per_page: PER_PAGE,
   };
+  const queryKey = toQueryString(filters);
   const { data, loading, error, reload } = useAsyncData<StaffListResponse>(
     (signal) => listStaff(filters, signal),
     {
-      queryKey: toQueryString(filters),
+      queryKey,
       fallback: '账号列表加载失败',
       onUnauthorized,
     },
   );
+
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+
+  const { selectedIds, toggleSelect, toggleSelectAll, clearSelection, deselect } = useSelection(
+    items,
+    { resetKey: queryKey, excludeIds: [user.id] },
+  );
+
+  useEffect(() => {
+    if (!loading && page > 1 && items.length === 0 && total > 0) {
+      setPage((previous) => Math.max(1, previous - 1));
+    }
+  }, [loading, page, items.length, total]);
 
   function updateForm(patch: Partial<StaffForm>) {
     setForm((current) => ({ ...current, ...patch }));
@@ -210,7 +231,47 @@ export function useStaffAccounts({ user, onUnauthorized }: UseStaffAccountsOptio
     }
   }
 
-  const total = data?.total ?? 0;
+  async function deleteOne(item: StaffAccount) {
+    if (deletingId || deletingBatch || item.id === user.id) return;
+    if (!window.confirm(`确定删除 ${item.name}（${item.email}）的账号？删除后无法恢复。`)) return;
+
+    setDeletingId(item.id);
+    setNotice(null);
+    try {
+      await deleteStaff(item.id);
+      deselect(item.id);
+      setNotice({ tone: 'ok', text: `已删除 ${item.name} 的账号。` });
+      reload();
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function deleteSelected() {
+    if (deletingId || deletingBatch || selectedIds.length === 0) return;
+    if (
+      !window.confirm(
+        `确定删除选中的 ${selectedIds.length} 个账号？\n删除后无法恢复，这些账号将立即失去后台访问权限。`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingBatch(true);
+    setNotice(null);
+    try {
+      const payload = await deleteStaffBatch(selectedIds);
+      clearSelection();
+      setNotice({ tone: 'ok', text: `已删除 ${payload.deleted} 个账号。` });
+      reload();
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setDeletingBatch(false);
+    }
+  }
 
   return {
     user,
@@ -249,8 +310,15 @@ export function useStaffAccounts({ user, onUnauthorized }: UseStaffAccountsOptio
     changeRole,
     toggleStatus,
     total,
-    totalPages: Math.max(1, Math.ceil(total / PER_PAGE)),
+    totalPages,
     perPage: PER_PAGE,
     hasFilters: Boolean(query || role || status),
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    deletingId,
+    deletingBatch,
+    deleteOne,
+    deleteSelected,
   };
 }

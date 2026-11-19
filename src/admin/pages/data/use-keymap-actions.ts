@@ -5,7 +5,9 @@ import {
   createExample,
   createRoot,
   deleteExample,
+  deleteExamples,
   deleteRoot,
+  deleteRoots,
   importKeymap,
   updateExample,
   updateRoot,
@@ -67,6 +69,7 @@ export function useKeymapActions({
 }: Options) {
   const [importing, setImporting] = useState(false);
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   function reportError(caught: unknown, fallback: string) {
     const message = resolveAdminError(caught, fallback, onUnauthorized);
@@ -126,6 +129,42 @@ export function useKeymapActions({
     }
   }
 
+  async function handleBatchDeleteRoots(ids: string[]): Promise<boolean> {
+    if (!canWrite || batchDeleting || ids.length === 0) return false;
+    setBatchDeleting(true);
+    setNotice(null);
+
+    try {
+      const payload = await deleteRoots(ids);
+      setNotice({ kind: 'ok', text: `已删除 ${payload.deleted} 条字根` });
+      reload();
+      return true;
+    } catch (caught) {
+      reportError(caught, '批量删除字根失败');
+      return false;
+    } finally {
+      setBatchDeleting(false);
+    }
+  }
+
+  async function handleBatchDeleteExamples(ids: string[]): Promise<boolean> {
+    if (!canWrite || batchDeleting || ids.length === 0) return false;
+    setBatchDeleting(true);
+    setNotice(null);
+
+    try {
+      const payload = await deleteExamples(ids);
+      setNotice({ kind: 'ok', text: `已删除 ${payload.deleted} 条例字` });
+      reload();
+      return true;
+    } catch (caught) {
+      reportError(caught, '批量删除例字失败');
+      return false;
+    } finally {
+      setBatchDeleting(false);
+    }
+  }
+
   async function handleUpdateExample(id: string, input: ExampleDraft) {
     try {
       const payload = await updateExample(id, input);
@@ -182,6 +221,9 @@ export function useKeymapActions({
     importing,
     importReport,
     setImportReport,
+    batchDeleting,
+    handleBatchDeleteRoots,
+    handleBatchDeleteExamples,
     handleCreateRoot,
     handleCreateExample,
     handleUpdateRoot,

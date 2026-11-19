@@ -2,6 +2,11 @@ name = "xwubi"
 main = "src/worker/index.ts"
 compatibility_date = "2025-09-01"
 
+# 让 Worker 尽量在靠近 D1 主库的节点执行，降低数据库往返延迟；
+# 静态资源仍由 Cloudflare 边缘直接分发，不受影响。
+[placement]
+mode = "smart"
+
 # 静态资源（Vite 构建产物）交给 Cloudflare 边缘直接分发；
 # 未命中静态文件的请求才会进入 Worker（API 与 SPA 路由回退）。
 [assets]

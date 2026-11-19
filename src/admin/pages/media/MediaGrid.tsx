@@ -8,6 +8,9 @@ interface MediaGridProps {
   canWrite: boolean;
   canDelete: boolean;
   deletingId: string | null;
+  selectable: boolean;
+  selectedIds: string[];
+  onToggleSelect: (id: string) => void;
   onCopy: (item: MediaItem) => void;
   onEdit: (item: MediaItem) => void;
   onDelete: (item: MediaItem) => void;
@@ -24,6 +27,9 @@ export function MediaGrid({
   canWrite,
   canDelete,
   deletingId,
+  selectable,
+  selectedIds,
+  onToggleSelect,
   onCopy,
   onEdit,
   onDelete,
@@ -35,6 +41,15 @@ export function MediaGrid({
         return (
           <figure className="xw-media-card" key={item.id}>
             <div className="xw-media-card__thumb">
+              {selectable && (
+                <input
+                  type="checkbox"
+                  className="xw-check xw-media-card__check"
+                  checked={selectedIds.includes(item.id)}
+                  onChange={() => onToggleSelect(item.id)}
+                  aria-label={`选择「${item.filename}」`}
+                />
+              )}
               <img src={item.url} alt={item.alt || item.filename} loading="lazy" />
             </div>
             <figcaption className="xw-media-card__body">

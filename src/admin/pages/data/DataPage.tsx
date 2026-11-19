@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
+import { useSelection } from '../../lib/use-selection';
 import type { AdminUser, WubiVersion } from '../../types';
 import { defaultVersion, versionLabel, versionOptions } from '../../lib/versions';
 import { KeymapImport } from './KeymapImport';
@@ -79,6 +81,9 @@ export function DataPage({ user, onUnauthorized }: DataPageProps) {
     handleUpdateExample,
     handleDeleteExample,
     handleImport,
+    batchDeleting,
+    handleBatchDeleteRoots,
+    handleBatchDeleteExamples,
   } = useKeymapActions({
     tab,
     version,
@@ -103,6 +108,39 @@ export function DataPage({ user, onUnauthorized }: DataPageProps) {
     setPage(1);
   }, [tab, version, query]);
 
+  const itemsCount = total;
+  const pageItems = tab === 'roots' ? roots : examples;
+  const selectableItems: Array<{ id: string }> = pageItems;
+  const { selectedIds, allSelected, toggleSelect, toggleSelectAll, clearSelection } = useSelection(
+    selectableItems,
+    { resetKey: `${tab}|${version}|${query}|${page}|${pageSize}` },
+  );
+
+  // 删除后当前页可能已空，回退到上一页
+  useEffect(() => {
+    if (!loading && page > 1 && pageItems.length === 0 && total > 0) {
+      setPage((previous) => Math.max(1, previous - 1));
+    }
+  }, [loading, page, pageItems.length, total]);
+
+  async function handleBatchDelete() {
+    if (!canWrite || batchDeleting || selectedIds.length === 0) return;
+    const label = tab === 'roots' ? '字根' : '例字';
+    if (
+      !window.confirm(
+        `确定删除选中的 ${selectedIds.length} 条${label}？\n删除后无法恢复，前台码表数据会同步更新。`,
+      )
+    ) {
+      return;
+    }
+
+    const ok =
+      tab === 'roots'
+        ? await handleBatchDeleteRoots(selectedIds)
+        : await handleBatchDeleteExamples(selectedIds);
+    if (ok) clearSelection();
+  }
+
   function changeVersion(next: WubiVersion) {
     setVersion(next);
     try {
@@ -111,8 +149,6 @@ export function DataPage({ user, onUnauthorized }: DataPageProps) {
       // 忽略隐私模式下的写入失败
     }
   }
-
-  const itemsCount = tab === 'roots' ? roots.length : total;
 
   return (
     <div className="xw-content">
@@ -126,18 +162,7 @@ export function DataPage({ user, onUnauthorized }: DataPageProps) {
         </div>
       </header>
 
-      {notice && (
-        <div className={`xw-notice xw-notice--${notice.kind}`} role="status">
-          <span>{notice.text}</span>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            onClick={() => setNotice(null)}
-          >
-            关闭
-          </button>
-        </div>
-      )}
+      <NoticeBar notice={notice} onClose={() => setNotice(null)} />
 
       <div className="xw-tabs" role="tablist">
         {(
@@ -190,6 +215,28 @@ export function DataPage({ user, onUnauthorized }: DataPageProps) {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </div>
+            {canWrite && (
+              <label className="xw-check-line">
+                <input
+                  type="checkbox"
+                  className="xw-check"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  disabled={pageItems.length === 0}
+                />
+                全选本页
+              </label>
+            )}
+            {canWrite && selectedIds.length > 0 && (
+              <button
+                type="button"
+                className="xw-btn xw-btn--danger xw-btn--sm"
+                disabled={batchDeleting}
+                onClick={() => void handleBatchDelete()}
+              >
+                {batchDeleting ? '删除中…' : `批量删除（${selectedIds.length}）`}
+              </button>
+            )}
             <span className="xw-toolbar__count">
               {loading ? '加载中…' : `共 ${itemsCount} 条`}
             </span>
@@ -261,31 +308,33 @@ export function DataPage({ user, onUnauthorized }: DataPageProps) {
               items={roots}
               canWrite={canWrite}
               loading={loading}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
               onUpdate={handleUpdateRoot}
               onDelete={handleDeleteRoot}
             />
           ) : (
-            <>
-              <ExamplesTable
-                items={examples}
-                canWrite={canWrite}
-                loading={loading}
-                onUpdate={handleUpdateExample}
-                onDelete={handleDeleteExample}
-              />
-
-              <KeymapPager
-                page={page}
-                pageSize={pageSize}
-                total={total}
-                onPageChange={setPage}
-                onPageSizeChange={(size) => {
-                  setPageSize(size);
-                  setPage(1);
-                }}
-              />
-            </>
+            <ExamplesTable
+              items={examples}
+              canWrite={canWrite}
+              loading={loading}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              onUpdate={handleUpdateExample}
+              onDelete={handleDeleteExample}
+            />
           )}
+
+          <KeymapPager
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
         </>
       )}
     </div>

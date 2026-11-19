@@ -54,13 +54,16 @@ export interface ExampleInput extends ExampleDraft {
   sort_order: number;
 }
 
-export interface ExampleListResponse {
+export interface KeymapListResponse<T> {
   version: WubiVersion;
-  items: WubiExampleItem[];
+  items: T[];
   total: number;
   page: number;
   per_page: number;
 }
+
+export type RootListResponse = KeymapListResponse<WubiRootItem>;
+export type ExampleListResponse = KeymapListResponse<WubiExampleItem>;
 
 export interface ImportReport {
   kind: KeymapKind;
@@ -88,9 +91,14 @@ export interface MatrixVersion {
 export function listRoots(
   version: WubiVersion,
   q: string,
+  page: number,
+  perPage: number,
   signal?: AbortSignal,
-): Promise<{ version: WubiVersion; items: WubiRootItem[] }> {
-  return getJson(`/api/admin/data/roots${toQueryString({ version, q })}`, signal);
+): Promise<RootListResponse> {
+  return getJson(
+    `/api/admin/data/roots${toQueryString({ version, q, page, per_page: perPage })}`,
+    signal,
+  );
 }
 
 export function createRoot(input: RootInput): Promise<{ item: WubiRootItem }> {
@@ -106,6 +114,10 @@ export function updateRoot(
 
 export function deleteRoot(id: string): Promise<{ ok: true }> {
   return deleteJson(`/api/admin/data/roots/${encodeURIComponent(id)}`);
+}
+
+export function deleteRoots(ids: string[]): Promise<{ ok: true; deleted: number }> {
+  return postJson('/api/admin/data/roots/batch-delete', { ids });
 }
 
 export function listExamples(
@@ -139,6 +151,10 @@ export function updateExample(
 
 export function deleteExample(id: string): Promise<{ ok: true }> {
   return deleteJson(`/api/admin/data/examples/${encodeURIComponent(id)}`);
+}
+
+export function deleteExamples(ids: string[]): Promise<{ ok: true; deleted: number }> {
+  return postJson('/api/admin/data/examples/batch-delete', { ids });
 }
 
 export function importKeymap(input: {

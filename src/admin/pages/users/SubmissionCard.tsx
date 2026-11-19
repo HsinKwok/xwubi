@@ -11,6 +11,10 @@ interface Props {
   pending: string | null;
   rejecting: boolean;
   rejectNote: string;
+  selected: boolean;
+  deleting: boolean;
+  onToggleSelect: () => void;
+  onDelete: () => void;
   onChangeRejectNote: (value: string) => void;
   onStatus: (next: SubmissionStatus) => void;
   onReject: () => void;
@@ -24,6 +28,10 @@ export function SubmissionCard({
   pending,
   rejecting,
   rejectNote,
+  selected,
+  deleting,
+  onToggleSelect,
+  onDelete,
   onChangeRejectNote,
   onStatus,
   onReject,
@@ -37,6 +45,13 @@ export function SubmissionCard({
     <article className="xw-review-card">
       <div className="xw-review-card__main">
         <div className="xw-review-card__top">
+          <input
+            type="checkbox"
+            className="xw-check"
+            checked={selected}
+            onChange={onToggleSelect}
+            aria-label={`选择投稿《${item.title}》`}
+          />
           <span className="xw-tag">{SUBMISSION_KIND_LABELS[item.kind] ?? item.kind}</span>
           {item.version && (
             <span className="xw-review-card__version">{versionLabel(item.version)}</span>
@@ -123,6 +138,14 @@ export function SubmissionCard({
         ) : (
           <span className="xw-toolbar__count">已处理</span>
         )}
+        <button
+          type="button"
+          className="xw-btn xw-btn--danger xw-btn--sm"
+          disabled={pending !== null || deleting}
+          onClick={onDelete}
+        >
+          {deleting ? '删除中…' : '删除'}
+        </button>
       </div>
 
       {rejecting && (

@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { resolveAdminError } from '../../lib/api';
-import { createContent, createTag, getContent, updateContent } from '../../lib/content-api';
+import { createContent, createTag, deleteContent, getContent, updateContent } from '../../lib/content-api';
 import type { AdminContentItem } from '../../lib/content-api';
 import type { AdminUser } from '../../types';
 import { buildInput, emptyForm, formFromItem, snapshot } from './content-form';
@@ -32,6 +32,7 @@ export function useContentEditor({ user, id, onNavigate, onUnauthorized }: Optio
   const [notice, setNotice] = useState<EditorNotice | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const [conflict, setConflict] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const { tags, setTags, tagsLoading, tagsError } = useEditorTags(onUnauthorized);
@@ -146,6 +147,22 @@ export function useContentEditor({ user, id, onNavigate, onUnauthorized }: Optio
     }
   }
 
+  async function handleDelete() {
+    if (!item || !canEdit || deleting) return;
+    if (!window.confirm(`确定删除「${item.title}」？删除后无法恢复。`)) return;
+
+    setDeleting(true);
+    setNotice(null);
+    try {
+      await deleteContent(item.id);
+      onNavigate('/admin/content');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function persist(): Promise<AdminContentItem | null> {
     const input = buildInput(form, item);
 
@@ -208,6 +225,7 @@ export function useContentEditor({ user, id, onNavigate, onUnauthorized }: Optio
     notice,
     problems,
     conflict,
+    deleting,
     canEdit,
     canReview,
     dirty,
@@ -222,5 +240,6 @@ export function useContentEditor({ user, id, onNavigate, onUnauthorized }: Optio
     handlePublish,
     handleTransition,
     handleVerify,
+    handleDelete,
   };
 }

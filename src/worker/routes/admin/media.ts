@@ -190,6 +190,50 @@ mediaRoutes.patch('/:id', requireRole(...WRITERS), async (c) => {
   return c.json({ item: updated ? mapMedia(updated) : null });
 });
 
+mediaRoutes.post('/batch-delete', requireRole('admin'), async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const ids = Array.isArray(body.ids)
+    ? [
+        ...new Set(
+          body.ids.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0,
+          ),
+        ),
+      ]
+    : [];
+  if (ids.length === 0) return fail(c, 400, 'invalid_request', '请选择要删除的图片');
+  if (ids.length > 100) return fail(c, 400, 'invalid_request', '一次最多删除 100 张图片');
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const found = await c.env.DB.prepare(
+    `SELECT id, r2_key, filename FROM media WHERE id IN (${placeholders})`,
+  )
+    .bind(...ids)
+    .all<{ id: string; r2_key: string; filename: string }>();
+  const rows = found.results ?? [];
+  if (rows.length === 0) return fail(c, 404, 'media_not_found', '图片不存在');
+
+  await Promise.all(rows.map((row) => c.env.BUCKET.delete(row.r2_key).catch(() => undefined)));
+
+  const rowIds = rows.map((row) => row.id);
+  await c.env.DB.batch(
+    rowIds.map((id) => c.env.DB.prepare('DELETE FROM media WHERE id = ?').bind(id)),
+  );
+
+  for (const row of rows) {
+    await writeAudit(c, {
+      action: 'media.delete',
+      targetType: 'media',
+      targetId: row.id,
+      summary: row.filename,
+    });
+  }
+
+  return c.json({ ok: true, deleted: rows.length });
+});
+
 mediaRoutes.delete('/:id', requireRole('admin'), async (c) => {
   const id = c.req.param('id') ?? '';
   const row = await loadMedia(c, id);

@@ -8,6 +8,13 @@
 /favicon.ico
   Cache-Control: public, max-age=86400
 
+/logo.png
+  Cache-Control: public, max-age=604800
+
+/site.html
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Robots-Tag: noindex
+
 # 后台页面与静态资源不对搜索引擎开放，且每次回到页面都要重新校验
 /admin
   Cache-Control: no-cache

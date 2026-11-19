@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { resolveAdminError } from '../../lib/api';
 import { useAsyncData } from '../../lib/use-async-data';
+import { useSelection } from '../../lib/use-selection';
 import { listCategories } from '../../lib/categories-api';
 import type { CategoryItem } from '../../lib/categories-api';
 import {
   createPracticeText,
   deletePracticeText,
+  deletePracticeTexts,
   getPracticeText,
   listPracticeTexts,
   updatePracticeText,
@@ -39,6 +41,7 @@ export function usePracticeTexts({ canWrite, onUnauthorized }: Options) {
   const [editor, setEditor] = useState<PracticeTextEditorState | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const { data, setData, loading, error, reload } = useAsyncData<PracticeTextListPayload>(
     (signal) => listPracticeTexts(signal),
@@ -80,6 +83,10 @@ export function usePracticeTexts({ canWrite, onUnauthorized }: Options) {
   const currentPage = Math.min(page, totalPages);
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+  const { selectedIds, toggleSelect, toggleSelectAll, clearSelection, deselect } = useSelection(
+    pageItems,
+    { resetKey: `${query}|${genreFilter}|${page}` },
+  );
 
   /** 搜索或筛选变化后回到第一页 */
   function changeQuery(value: string) {
@@ -206,6 +213,7 @@ export function usePracticeTexts({ canWrite, onUnauthorized }: Options) {
           : previous,
       );
       if (editor?.id === item.id) setEditor(null);
+      deselect(item.id);
       setNotice({ kind: 'ok', text: `已删除《${item.title}》` });
     } catch (caught) {
       const message = resolveAdminError(caught, '删除失败', onUnauthorized);
@@ -213,6 +221,37 @@ export function usePracticeTexts({ canWrite, onUnauthorized }: Options) {
       setNotice({ kind: 'error', text: message });
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function deleteSelected() {
+    if (!canWrite || batchDeleting || selectedIds.length === 0) return;
+    if (
+      !window.confirm(
+        `确定删除选中的 ${selectedIds.length} 篇？\n删除后无法恢复，前台「文章跟打」将不再显示这些篇目。`,
+      )
+    ) {
+      return;
+    }
+
+    setBatchDeleting(true);
+    try {
+      const payload = await deletePracticeTexts(selectedIds);
+      const removeSet = new Set(selectedIds);
+      setData((previous) =>
+        previous
+          ? { ...previous, items: previous.items.filter((row) => !removeSet.has(row.id)) }
+          : previous,
+      );
+      if (editor && editor.id && removeSet.has(editor.id)) setEditor(null);
+      clearSelection();
+      setNotice({ kind: 'ok', text: `已删除 ${payload.deleted} 篇` });
+    } catch (caught) {
+      const message = resolveAdminError(caught, '批量删除失败', onUnauthorized);
+      if (!message) return;
+      setNotice({ kind: 'error', text: message });
+    } finally {
+      setBatchDeleting(false);
     }
   }
 
@@ -245,5 +284,10 @@ export function usePracticeTexts({ canWrite, onUnauthorized }: Options) {
     startEdit,
     handleSave,
     handleDelete,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    batchDeleting,
+    deleteSelected,
   };
 }

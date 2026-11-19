@@ -1,5 +1,5 @@
 import { toQueryString } from '../../shared/query';
-import { deleteJson, getJson, patchJson, postForm } from './api';
+import { deleteJson, getJson, patchJson, postForm, postJson } from './api';
 
 export interface MediaItem {
   id: string;
@@ -55,4 +55,8 @@ export function updateMedia(id: string, input: { alt?: string; version?: string 
 
 export function deleteMedia(id: string) {
   return deleteJson<{ ok: true }>(`/api/admin/media/${encodeURIComponent(id)}`);
+}
+
+export function deleteMediaBatch(ids: string[]) {
+  return postJson<{ ok: true; deleted: number }>('/api/admin/media/batch-delete', { ids });
 }

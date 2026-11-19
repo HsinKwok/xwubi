@@ -11,6 +11,10 @@ interface ReviewCardProps {
   pending: string | null;
   rejecting: boolean;
   rejectNote: string;
+  selected: boolean;
+  deleting: boolean;
+  onToggleSelect: () => void;
+  onDelete: () => void;
   onRejectNoteChange: (value: string) => void;
   onOpen: (href: string) => void;
   onPublish: () => void;
@@ -27,6 +31,10 @@ export function ReviewCard({
   pending,
   rejecting,
   rejectNote,
+  selected,
+  deleting,
+  onToggleSelect,
+  onDelete,
   onRejectNoteChange,
   onOpen,
   onPublish,
@@ -55,6 +63,15 @@ export function ReviewCard({
     <article className="xw-review-card">
       <div className="xw-review-card__main">
         <div className="xw-review-card__top">
+          {canReview && (
+            <input
+              type="checkbox"
+              className="xw-check"
+              checked={selected}
+              onChange={onToggleSelect}
+              aria-label={`选择《${item.title}》`}
+            />
+          )}
           <span className="xw-tag">{typeLabel(item.type, contentTypes)}</span>
           <span className="xw-review-card__version">{versionLabel(item.version)}</span>
           <span className={`xw-status xw-status--${item.status}`}>
@@ -88,6 +105,16 @@ export function ReviewCard({
         <a className="xw-btn xw-btn--ghost xw-btn--sm" href={detailHref} onClick={go}>
           查看
         </a>
+        {canReview && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger xw-btn--sm"
+            disabled={pending !== null || deleting}
+            onClick={onDelete}
+          >
+            {deleting ? '删除中…' : '删除'}
+          </button>
+        )}
         {canReview && (
           <>
             <button

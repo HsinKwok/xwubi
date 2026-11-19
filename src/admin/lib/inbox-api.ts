@@ -1,5 +1,5 @@
 import { toQueryString } from '../../shared/query';
-import { getJson, patchJson } from './api';
+import { deleteJson, getJson, patchJson, postJson } from './api';
 
 export const SUBMISSION_KINDS = ['news', 'correction', 'software'] as const;
 export type SubmissionKind = (typeof SUBMISSION_KINDS)[number];
@@ -99,4 +99,20 @@ export function updateFeedback(id: string, input: { status: FeedbackStatus }) {
     `/api/admin/feedback/${encodeURIComponent(id)}`,
     input,
   );
+}
+
+export function deleteSubmission(id: string) {
+  return deleteJson<{ ok: true }>(`/api/admin/submissions/${encodeURIComponent(id)}`);
+}
+
+export function deleteSubmissions(ids: string[]) {
+  return postJson<{ ok: true; deleted: number }>('/api/admin/submissions/batch-delete', { ids });
+}
+
+export function deleteFeedback(id: string) {
+  return deleteJson<{ ok: true }>(`/api/admin/feedback/${encodeURIComponent(id)}`);
+}
+
+export function deleteFeedbacks(ids: string[]) {
+  return postJson<{ ok: true; deleted: number }>('/api/admin/feedback/batch-delete', { ids });
 }

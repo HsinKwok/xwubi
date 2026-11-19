@@ -13,7 +13,7 @@ export interface AuditInput {
 export async function writeAudit(c: Context<AppEnv>, input: AuditInput): Promise<void> {
   const actor = c.get('user');
 
-  await c.env.DB.prepare(
+  const write = c.env.DB.prepare(
     `INSERT INTO audit_logs (id, actor_id, action, target_type, target_id, summary, diff_json, ip, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
@@ -29,4 +29,12 @@ export async function writeAudit(c: Context<AppEnv>, input: AuditInput): Promise
       nowIso(),
     )
     .run();
+
+  // 审计写入不参与响应关键路径：交给 waitUntil 在响应后完成，
+  // 省掉一次 D1 写往返；非 Worker 环境（测试脚本）退化为同步等待。
+  try {
+    c.executionCtx.waitUntil(write);
+  } catch {
+    await write;
+  }
 }

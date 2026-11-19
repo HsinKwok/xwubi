@@ -1,4 +1,7 @@
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
+import { Pager } from '../../components/Pager';
+import '../../styles/content.css';
 import { contentVersionOptions } from '../../lib/versions';
 import { createNavigateHandler } from '../../lib/navigate';
 import type { AdminUser } from '../../types';
@@ -39,6 +42,14 @@ export function ContentListPage({
     reload,
     items,
     total,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    deletingId,
+    deletingBatch,
+    notice,
+    deleteOne,
+    deleteSelected,
   } = useContentList({ initialQuery, onUnauthorized });
 
   const go = createNavigateHandler(onNavigate);
@@ -118,10 +129,24 @@ export function ContentListPage({
         </select>
 
         <span className="xw-toolbar__spacer" />
+
+        {canWrite && selectedIds.length > 0 && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger xw-btn--sm"
+            disabled={deletingBatch || deletingId !== null || loading}
+            onClick={deleteSelected}
+          >
+            {deletingBatch ? '删除中…' : `批量删除（${selectedIds.length}）`}
+          </button>
+        )}
+
         <span className="xw-toolbar__count">
           {loading ? '加载中…' : `共 ${total} 条`}
         </span>
       </div>
+
+      <NoticeBar notice={notice} />
 
       {error ? (
         <div className="xw-panel">
@@ -146,34 +171,18 @@ export function ContentListPage({
             emptyText={
               query || type || version || status ? '没有符合筛选条件的内容' : '还没有内容，先新建一条'
             }
+            canWrite={canWrite}
+            selectedIds={selectedIds}
+            deletingId={deletingId}
             go={go}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAll}
+            onDelete={deleteOne}
           />
         </div>
       )}
 
-      <div className="xw-page-foot">
-        <span>
-          第 {page} / {totalPages} 页
-        </span>
-        <div className="xw-page-foot__actions">
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            上一页
-          </button>
-          <button
-            type="button"
-            className="xw-btn xw-btn--ghost xw-btn--sm"
-            disabled={page >= totalPages || loading}
-            onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-          >
-            下一页
-          </button>
-        </div>
-      </div>
+      <Pager page={page} totalPages={totalPages} loading={loading} onChange={setPage} />
     </div>
   );
 }

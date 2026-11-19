@@ -13,7 +13,7 @@ export const STATIC_CACHE_TTL = 600;
  * 参与缓存键的业务参数。固定顺序重建，避免 `?a=1&b=2` 与 `?b=2&a=1`
  * 各存一份；其余无关参数（跟踪参数等）不进入缓存键。
  */
-const CACHE_PARAMS = ['type', 'stage', 'tag', 'page', 'per_page', 'q'] as const;
+const CACHE_PARAMS = ['type', 'stage', 'tag', 'page', 'per_page', 'cursor', 'q'] as const;
 
 export interface PublicContext {
   config: SiteConfig;

@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import type { AdminSection } from '../types';
 
 // 邀请、找回与改密页面使用频率低，按需加载以缩小登录首屏 JS
 export const AcceptInvitePage = lazy(() =>
@@ -22,43 +23,58 @@ export const ResetPasswordPage = lazy(() =>
   })),
 );
 
-// 管理后台各功能页按需加载，减小首屏 JS 体积
+// 各功能页的 chunk 加载器，按需加载以减小首屏 JS 体积，同时供侧栏悬停预取复用
+const pageLoaders = {
+  dashboard: () => import('./DashboardPage'),
+  review: () => import('./review/ReviewPage'),
+  settings: () => import('./settings/SettingsPage'),
+  users: () => import('./users/UsersPage'),
+  data: () => import('./data/DataPage'),
+  media: () => import('./media/MediaPage'),
+  practice: () => import('./practice/PracticeTextsPage'),
+  categories: () => import('./categories/CategoriesPage'),
+  content: () => import('./content/ContentListPage'),
+} satisfies Record<AdminSection, () => Promise<unknown>>;
+
 export const DashboardPage = lazy(() =>
-  import('./DashboardPage').then((module) => ({ default: module.DashboardPage })),
+  pageLoaders.dashboard().then((module) => ({ default: module.DashboardPage })),
 );
 export const ReviewPage = lazy(() =>
-  import('./review/ReviewPage').then((module) => ({ default: module.ReviewPage })),
+  pageLoaders.review().then((module) => ({ default: module.ReviewPage })),
 );
 export const SettingsPage = lazy(() =>
-  import('./settings/SettingsPage').then((module) => ({ default: module.SettingsPage })),
+  pageLoaders.settings().then((module) => ({ default: module.SettingsPage })),
 );
 export const UsersPage = lazy(() =>
-  import('./users/UsersPage').then((module) => ({ default: module.UsersPage })),
+  pageLoaders.users().then((module) => ({ default: module.UsersPage })),
 );
 export const DataPage = lazy(() =>
-  import('./data/DataPage').then((module) => ({ default: module.DataPage })),
+  pageLoaders.data().then((module) => ({ default: module.DataPage })),
 );
 export const MediaPage = lazy(() =>
-  import('./media/MediaPage').then((module) => ({ default: module.MediaPage })),
+  pageLoaders.media().then((module) => ({ default: module.MediaPage })),
 );
 export const PracticeTextsPage = lazy(() =>
-  import('./practice/PracticeTextsPage').then((module) => ({
-    default: module.PracticeTextsPage,
-  })),
+  pageLoaders.practice().then((module) => ({ default: module.PracticeTextsPage })),
 );
 export const CategoriesPage = lazy(() =>
-  import('./categories/CategoriesPage').then((module) => ({
-    default: module.CategoriesPage,
-  })),
+  pageLoaders.categories().then((module) => ({ default: module.CategoriesPage })),
 );
 export const ContentListPage = lazy(() =>
-  import('./content/ContentListPage').then((module) => ({ default: module.ContentListPage })),
+  pageLoaders.content().then((module) => ({ default: module.ContentListPage })),
 );
 export const ContentEditorPage = lazy(() =>
   import('./content/ContentEditorPage').then((module) => ({
     default: module.ContentEditorPage,
   })),
 );
+
+/** 预取管理页 chunk：侧栏悬停/聚焦、键盘 Tab 到时提前下载 */
+export function prefetchSection(section: AdminSection): void {
+  void pageLoaders[section]().catch(() => {
+    // 预取失败不打扰用户，真正进入页面时 lazy 会重试
+  });
+}
 
 /** 懒加载页面与登录检测共用的骨架 */
 export function PageLoading() {

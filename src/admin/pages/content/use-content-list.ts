@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { toQueryString } from '../../../shared/query';
-import { listContent } from '../../lib/content-api';
+import { resolveAdminError } from '../../lib/api';
+import { deleteContent, deleteContents, listContent } from '../../lib/content-api';
 import { useAsyncData } from '../../lib/use-async-data';
-import type { ContentListResponse } from '../../lib/content-api';
+import { useSelection } from '../../lib/use-selection';
+import type { AdminContentItem, ContentListResponse } from '../../lib/content-api';
 import { listCategories } from '../../lib/categories-api';
 import type { CategoryItem } from '../../lib/categories-api';
 
@@ -24,6 +26,9 @@ export function useContentList({ initialQuery = '', onUnauthorized }: Options) {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingBatch, setDeletingBatch] = useState(false);
+  const [notice, setNotice] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -55,16 +60,22 @@ export function useContentList({ initialQuery = '', onUnauthorized }: Options) {
     page,
     per_page: PER_PAGE,
   };
+  const queryKey = toQueryString(filters);
   const { data, loading, error, reload } = useAsyncData<ContentListResponse>(
     (signal) => listContent(filters, signal),
     {
-      queryKey: toQueryString(filters),
+      queryKey,
       fallback: '内容列表加载失败',
       onUnauthorized,
     },
   );
 
+  // 筛选或翻页后，旧的选择不再可见，直接清空
   const items = data?.items ?? [];
+  const { selectedIds, toggleSelect, toggleSelectAll, clearSelection, deselect } = useSelection(
+    items,
+    { resetKey: queryKey },
+  );
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 
@@ -82,6 +93,50 @@ export function useContentList({ initialQuery = '', onUnauthorized }: Options) {
   function changeStatus(value: string) {
     setStatus(value);
     setPage(1);
+  }
+
+  async function deleteOne(item: AdminContentItem) {
+    if (deletingId || deletingBatch) return;
+    if (!window.confirm(`确定删除「${item.title}」？删除后无法恢复。`)) return;
+
+    setDeletingId(item.id);
+    setNotice(null);
+    try {
+      await deleteContent(item.id);
+      deselect(item.id);
+      setNotice({ tone: 'ok', text: `已删除「${item.title}」` });
+      reload();
+    } catch (caught) {
+      const message = resolveAdminError(caught, '删除失败', onUnauthorized);
+      if (message) setNotice({ tone: 'error', text: message });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function deleteSelected() {
+    if (deletingId || deletingBatch || selectedIds.length === 0) return;
+    if (
+      !window.confirm(
+        `确定删除选中的 ${selectedIds.length} 条内容？\n删除后无法恢复，前台相关页面会同步移除。`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingBatch(true);
+    setNotice(null);
+    try {
+      const payload = await deleteContents(selectedIds);
+      clearSelection();
+      setNotice({ tone: 'ok', text: `已删除 ${payload.deleted} 条内容` });
+      reload();
+    } catch (caught) {
+      const message = resolveAdminError(caught, '批量删除失败', onUnauthorized);
+      if (message) setNotice({ tone: 'error', text: message });
+    } finally {
+      setDeletingBatch(false);
+    }
   }
 
   return {
@@ -104,5 +159,13 @@ export function useContentList({ initialQuery = '', onUnauthorized }: Options) {
     reload,
     items,
     total,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    deletingId,
+    deletingBatch,
+    notice,
+    deleteOne,
+    deleteSelected,
   };
 }

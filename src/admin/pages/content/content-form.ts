@@ -148,6 +148,7 @@ export function buildMeta(
 
 export function buildInput(form: ContentFormState, item: AdminContentItem | null): ContentInput {
   const input: ContentInput = {
+    type: form.type,
     title: form.title.trim(),
     slug: optional(form.slug),
     version: form.version,
@@ -162,8 +163,6 @@ export function buildInput(form: ContentFormState, item: AdminContentItem | null
 
   if (item) {
     input.expected_updated_at = item.updated_at;
-  } else {
-    input.type = form.type;
   }
 
   return input;

@@ -80,6 +80,9 @@ export interface ReviewQueueItem {
 
 export interface ReviewQueueResponse {
   items: ReviewQueueItem[];
+  total: number;
+  page: number;
+  per_page: number;
   counts: {
     pending: number;
     needs_review: number;
@@ -130,6 +133,14 @@ export function updateContent(id: string, input: Partial<ContentInput>) {
   return patchJson<ContentItemResponse>(`/api/admin/content/${encodeURIComponent(id)}`, input);
 }
 
+export function deleteContent(id: string) {
+  return deleteJson<{ ok: true }>(`/api/admin/content/${encodeURIComponent(id)}`);
+}
+
+export function deleteContents(ids: string[]) {
+  return postJson<{ ok: true; deleted: number }>('/api/admin/content/batch-delete', { ids });
+}
+
 export function submitContent(id: string) {
   return postJson<{ ok: true; status: ContentStatus }>(
     `/api/admin/content/${encodeURIComponent(id)}/submit`,
@@ -162,13 +173,26 @@ export function rejectContent(id: string, note?: string) {
 }
 
 export function listReviewQueue(
-  params: { type?: string; version?: string },
+  params: { type?: string; version?: string; page?: number; per_page?: number },
   signal?: AbortSignal,
 ) {
   return getJson<ReviewQueueResponse>(
-    `/api/admin/review${toQueryString({ type: params.type, version: params.version })}`,
+    `/api/admin/review${toQueryString({
+      type: params.type,
+      version: params.version,
+      page: params.page && params.page > 1 ? params.page : undefined,
+      per_page: params.per_page,
+    })}`,
     signal,
   );
+}
+
+export function deleteReviewItem(id: string) {
+  return deleteJson<{ ok: true }>(`/api/admin/review/${encodeURIComponent(id)}`);
+}
+
+export function deleteReviewItems(ids: string[]) {
+  return postJson<{ ok: true; deleted: number }>('/api/admin/review/batch-delete', { ids });
 }
 
 export function listRevisions(id: string, signal?: AbortSignal) {

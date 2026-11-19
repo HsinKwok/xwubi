@@ -4,6 +4,7 @@ import { writeAudit } from '../../lib/audit';
 import { fail, readJson } from '../../lib/http';
 import { newId, nowIso } from '../../lib/ids';
 import { requireRole } from '../../lib/session';
+import { normalizePage, normalizePageSize } from '../../lib/pagination';
 import { bumpEpoch } from '../../lib/settings';
 import {
   type RootRow,
@@ -23,16 +24,34 @@ rootsRoutes.get('/', async (c) => {
   if (!version) return fail(c, 400, 'invalid_version', '码表版本不合法');
 
   const query = (c.req.query('q') ?? '').trim();
-  const { results } = await c.env.DB.prepare(
-    `SELECT id, version, key, mnemonic, roots, note, sort_order, created_at, updated_at
-     FROM wubi_roots
-     WHERE version = ? AND (? = '' OR key LIKE ? OR roots LIKE ? OR mnemonic LIKE ?)
-     ORDER BY sort_order, key`,
-  )
-    .bind(version, query, `%${query}%`, `%${query}%`, `%${query}%`)
-    .all<RootRow>();
+  const page = normalizePage(c.req.query('page'));
+  const perPage = normalizePageSize(c.req.query('per_page'));
+  const like = `%${query}%`;
 
-  return c.json({ version, items: results ?? [] });
+  const [countResult, listResult] = await c.env.DB.batch<Record<string, unknown>>([
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS total
+       FROM wubi_roots
+       WHERE version = ? AND (? = '' OR key LIKE ? OR roots LIKE ? OR mnemonic LIKE ?)`,
+    ).bind(version, query, like, like, like),
+    c.env.DB.prepare(
+      `SELECT id, version, key, mnemonic, roots, note, sort_order, created_at, updated_at
+       FROM wubi_roots
+       WHERE version = ? AND (? = '' OR key LIKE ? OR roots LIKE ? OR mnemonic LIKE ?)
+       ORDER BY sort_order, key
+       LIMIT ? OFFSET ?`,
+    ).bind(version, query, like, like, like, perPage, (page - 1) * perPage),
+  ]);
+
+  const totalRow = countResult.results?.[0] as { total?: number } | undefined;
+
+  return c.json({
+    version,
+    items: (listResult.results ?? []) as unknown as RootRow[],
+    total: Number(totalRow?.total ?? 0),
+    page,
+    per_page: perPage,
+  });
 });
 
 rootsRoutes.post('/', requireAdmin, async (c) => {
@@ -151,6 +170,52 @@ rootsRoutes.patch('/:id', requireAdmin, async (c) => {
   });
 
   return c.json({ item });
+});
+
+rootsRoutes.post('/batch-delete', requireAdmin, async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const ids = Array.isArray(body.ids)
+    ? [
+        ...new Set(
+          body.ids.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0,
+          ),
+        ),
+      ]
+    : [];
+  if (ids.length === 0) return fail(c, 400, 'invalid_request', '请选择要删除的字根');
+  if (ids.length > 100) return fail(c, 400, 'invalid_request', '一次最多删除 100 条字根');
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const found = await c.env.DB.prepare(
+    `SELECT id, version, key FROM wubi_roots WHERE id IN (${placeholders})`,
+  )
+    .bind(...ids)
+    .all<{ id: string; version: string; key: string }>();
+  const rows = found.results ?? [];
+  if (rows.length === 0) return fail(c, 404, 'root_not_found', '字根不存在');
+
+  const rowIds = rows.map((row) => row.id);
+  await c.env.DB.prepare(
+    `DELETE FROM wubi_roots WHERE id IN (${rowIds.map(() => '?').join(', ')})`,
+  )
+    .bind(...rowIds)
+    .run();
+
+  await bumpEpoch(c.env);
+
+  for (const row of rows) {
+    await writeAudit(c, {
+      action: 'data.root_delete',
+      targetType: 'wubi_root',
+      targetId: row.id,
+      summary: `${row.version} · ${row.key}`,
+    });
+  }
+
+  return c.json({ ok: true, deleted: rows.length });
 });
 
 rootsRoutes.delete('/:id', requireAdmin, async (c) => {

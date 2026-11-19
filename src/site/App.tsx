@@ -103,6 +103,12 @@ export function App() {
     const cached = bootKey === 0 ? readCachedBootstrap(dataVersion) : null;
     if (cached) {
       apply(cached);
+      // SWR：先渲染缓存，再静默拉取一次最新配置；失败时继续用缓存
+      fetchBootstrap(dataVersion, controller.signal, true)
+        .then((payload) => {
+          if (!controller.signal.aborted) apply(payload);
+        })
+        .catch(() => {});
       return () => controller.abort();
     }
 
@@ -135,8 +141,9 @@ export function App() {
 
   useEffect(() => {
     if (!boot) return;
+    // 内容页会在数据到位后覆盖为条目标题，这里负责其余页面的标题与离开内容页后的恢复
     document.title = `${boot.brand.name} · ${boot.brand.tagline}`;
-  }, [boot]);
+  }, [boot, pathname]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

@@ -892,6 +892,17 @@ body {
   background: var(--xw-surface);
 }
 
+.xw-btn--danger {
+  border-color: color-mix(in srgb, var(--xw-danger) 42%, transparent);
+  background: var(--xw-bg);
+  color: var(--xw-danger);
+}
+
+.xw-btn--danger:hover {
+  border-color: var(--xw-danger);
+  background: color-mix(in srgb, var(--xw-danger) 10%, var(--xw-bg));
+}
+
 .xw-btn--sm {
   height: 30px;
   padding: 0 10px;

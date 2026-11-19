@@ -1,4 +1,5 @@
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
 import { formatDateTime } from '../../lib/format';
 import type { AdminUser } from '../../types';
 import { BrandSection } from './BrandSection';
@@ -107,11 +108,7 @@ export function SettingsPage({ user, onUnauthorized }: SettingsPageProps) {
         </div>
       )}
 
-      {notice && (
-        <div className={`xw-notice xw-notice--${notice.tone}`} role="status">
-          {notice.text}
-        </div>
-      )}
+      <NoticeBar notice={notice} />
 
       {mode === 'json' ? (
         <section className="xw-panel">

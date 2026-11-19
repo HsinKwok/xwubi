@@ -7,7 +7,7 @@ export interface PublishSettingsPanelProps {
   form: ContentFormState;
   contentTypes: TypeOption[];
   canEdit: boolean;
-  /** 已有内容不允许再改类型 */
+  /** 仅用于提示文案，已有内容也允许改类型 */
   isEditing: boolean;
   role: AdminUser['role'];
   onChange: <K extends keyof ContentFormState>(key: K, value: ContentFormState[K]) => void;
@@ -34,7 +34,7 @@ export function PublishSettingsPanel({
           <select
             className="xw-select xw-select--block"
             value={form.type}
-            disabled={!canEdit || isEditing || role === 'ops'}
+            disabled={!canEdit || role === 'ops'}
             onChange={(event) => onChangeType(event.target.value)}
           >
             {contentTypes.map((type) => (
@@ -44,7 +44,7 @@ export function PublishSettingsPanel({
             ))}
           </select>
           <span className="xw-field__hint">
-            {isEditing ? '创建后不可更改类型。' : '类型决定前台归属与发布校验。'}
+            {isEditing ? '修改后前台归属与详情地址会随之变化。' : '类型决定前台归属与发布校验。'}
           </span>
         </label>
 

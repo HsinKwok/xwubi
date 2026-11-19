@@ -155,6 +155,7 @@ export function optionalInt(value: unknown): number | null {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null;
 }
 
+/** 审核队列的 SQL 统计（review.ts 的 READY_EXPR）与此处规则保持一致 */
 export function validateForPublish(row: ContentRow): string[] {
   const problems: string[] = [];
   const meta = parseMeta(row.meta_json);

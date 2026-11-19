@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { CollectionPayload } from '../../../shared/site-config';
 import type { AppEnv } from '../../lib/env';
-import { listPublishedWithTotal } from '../../lib/content';
+import { listPublishedPage } from '../../lib/content';
 import { fail } from '../../lib/http';
 import { normalizePage, normalizePageSize } from '../../lib/pagination';
 import { buildCollections, loadSiteTaxonomy } from '../../lib/site-taxonomy';
@@ -23,19 +23,21 @@ collectionRoutes.get('/collection', (c) =>
 
     const stage = c.req.query('stage') || undefined;
     const tag = c.req.query('tag') || undefined;
+    const cursor = c.req.query('cursor') || undefined;
 
     const page = normalizePage(c.req.query('page'));
     const perPage = c.req.query('per_page')
       ? normalizePageSize(c.req.query('per_page'))
       : COLLECTION_PAGE_SIZE;
 
-    const { items, total } = await listPublishedWithTotal(c.env, {
+    const { items, total, nextCursor } = await listPublishedPage(c.env, {
       type,
       version,
       stage,
       tag,
       limit: perPage,
       offset: (page - 1) * perPage,
+      cursor,
     });
 
     const payload: CollectionPayload = {
@@ -43,6 +45,7 @@ collectionRoutes.get('/collection', (c) =>
       items,
       total,
       per_page: perPage,
+      next_cursor: nextCursor,
     };
 
     return c.json(payload);

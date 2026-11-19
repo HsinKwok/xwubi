@@ -131,3 +131,41 @@
 .xw-login__back:hover {
   color: var(--xw-text);
 }
+
+/* 多选与分页（审核、投稿、码表、跟打、媒体共用） */
+.xw-check {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--xw-brand);
+  flex: none;
+}
+
+.xw-check-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--xw-text-muted);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.xw-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.xw-pager__nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.xw-pager__info {
+  color: var(--xw-text-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}

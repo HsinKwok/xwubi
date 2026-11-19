@@ -1,3 +1,4 @@
+import { existsSync, renameSync } from 'node:fs';
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
@@ -18,8 +19,19 @@ const adminShellFallback: Plugin = {
   },
 };
 
+/** 站点外壳输出为 site.html：根路径不再被静态资源直接命中，统一由 Worker 注入头部/页脚 */
+const siteShellRename: Plugin = {
+  name: 'site-shell-rename',
+  apply: 'build',
+  writeBundle(options) {
+    const dir = options.dir ?? resolve(root, 'dist');
+    const from = resolve(dir, 'index.html');
+    if (existsSync(from)) renameSync(from, resolve(dir, 'site.html'));
+  },
+};
+
 export default defineConfig({
-  plugins: [react(), adminShellFallback],
+  plugins: [react(), adminShellFallback, siteShellRename],
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

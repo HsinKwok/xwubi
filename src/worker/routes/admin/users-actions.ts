@@ -16,6 +16,25 @@ export const usersActionRoutes = new Hono<AppEnv>();
 
 const requireAdmin = requireRole('admin');
 
+// 账号被其他表引用时无法直接删除，先把引用置空再移除账号本身
+async function purgeStaff(c: Parameters<typeof loadStaff>[0], id: string): Promise<void> {
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE invites SET invited_by = NULL WHERE invited_by = ?').bind(id),
+    c.env.DB.prepare('UPDATE content SET author_id = NULL WHERE author_id = ?').bind(id),
+    c.env.DB.prepare('UPDATE content SET assignee_id = NULL WHERE assignee_id = ?').bind(id),
+    c.env.DB.prepare('UPDATE content_revisions SET editor_id = NULL WHERE editor_id = ?').bind(id),
+    c.env.DB.prepare('UPDATE submissions SET assignee_id = NULL WHERE assignee_id = ?').bind(id),
+    c.env.DB.prepare('UPDATE feedback SET assignee_id = NULL WHERE assignee_id = ?').bind(id),
+    c.env.DB.prepare('UPDATE audit_logs SET actor_id = NULL WHERE actor_id = ?').bind(id),
+    c.env.DB.prepare('UPDATE media SET uploaded_by = NULL WHERE uploaded_by = ?').bind(id),
+    c.env.DB.prepare('UPDATE settings SET updated_by = NULL WHERE updated_by = ?').bind(id),
+    c.env.DB.prepare(
+      'DELETE FROM invites WHERE email = (SELECT email FROM users WHERE id = ?) AND accepted_at IS NULL',
+    ).bind(id),
+    c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id),
+  ]);
+}
+
 usersActionRoutes.post('/invite', requireAdmin, async (c) => {
   const body = await readJson<Record<string, unknown>>(c);
   if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
@@ -169,6 +188,86 @@ usersActionRoutes.patch('/:id', requireAdmin, async (c) => {
 
   const updated = await loadStaff(c, id);
   return c.json({ item: updated ? mapStaff(updated) : null });
+});
+
+usersActionRoutes.delete('/:id', requireAdmin, async (c) => {
+  const id = c.req.param('id') ?? '';
+  const row = await loadStaff(c, id);
+  if (!row) return fail(c, 404, 'user_not_found', '账号不存在');
+
+  const actor = c.get('user')!;
+  if (id === actor.id) return fail(c, 400, 'cannot_delete_self', '不能删除自己的账号');
+
+  if (row.role === 'admin' && row.status === 'active') {
+    const others = await countOtherActiveAdmins(c, id);
+    if (others === 0) return fail(c, 400, 'last_admin', '至少需要保留一个启用中的管理员');
+  }
+
+  await purgeStaff(c, id);
+
+  await writeAudit(c, {
+    action: 'user.delete',
+    targetType: 'user',
+    targetId: id,
+    summary: `${row.name}（${row.email}）`,
+    diff: { role: row.role, status: row.status },
+  });
+
+  return c.json({ ok: true });
+});
+
+usersActionRoutes.post('/batch-delete', requireAdmin, async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const ids = Array.isArray(body.ids)
+    ? [
+        ...new Set(
+          body.ids.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0,
+          ),
+        ),
+      ]
+    : [];
+  if (ids.length === 0) return fail(c, 400, 'invalid_request', '请选择要删除的账号');
+  if (ids.length > 100) return fail(c, 400, 'invalid_request', '一次最多删除 100 个账号');
+
+  const actor = c.get('user')!;
+  if (ids.includes(actor.id)) return fail(c, 400, 'cannot_delete_self', '不能删除自己的账号');
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const found = await c.env.DB.prepare(
+    `SELECT id, name, email, role, status FROM users WHERE id IN (${placeholders})`,
+  )
+    .bind(...ids)
+    .all<{ id: string; name: string; email: string; role: string; status: string }>();
+  const rows = found.results ?? [];
+  if (rows.length === 0) return fail(c, 404, 'user_not_found', '账号不存在');
+
+  const selectedActiveAdmins = rows.filter(
+    (row) => row.role === 'admin' && row.status === 'active',
+  ).length;
+  if (selectedActiveAdmins > 0) {
+    const adminRow = await c.env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM users WHERE role = 'admin' AND status = 'active'",
+    ).first<{ total: number }>();
+    if ((adminRow?.total ?? 0) - selectedActiveAdmins <= 0) {
+      return fail(c, 400, 'last_admin', '至少需要保留一个启用中的管理员');
+    }
+  }
+
+  for (const row of rows) {
+    await purgeStaff(c, row.id);
+    await writeAudit(c, {
+      action: 'user.delete',
+      targetType: 'user',
+      targetId: row.id,
+      summary: `${row.name}（${row.email}）`,
+      diff: { role: row.role, status: row.status },
+    });
+  }
+
+  return c.json({ ok: true, deleted: rows.length });
 });
 
 usersActionRoutes.post('/:id/password', requireAdmin, async (c) => {

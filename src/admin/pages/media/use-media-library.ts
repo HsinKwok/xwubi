@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { toQueryString } from '../../../shared/query';
 import { resolveAdminError } from '../../lib/api';
 import { useAsyncData } from '../../lib/use-async-data';
-import { deleteMedia, listMedia, updateMedia, uploadMedia } from '../../lib/media-api';
+import { useSelection } from '../../lib/use-selection';
+import { deleteMedia, deleteMediaBatch, listMedia, updateMedia, uploadMedia } from '../../lib/media-api';
 import type { MediaItem, MediaListResponse } from '../../lib/media-api';
 
 const PER_PAGE = 24;
@@ -22,6 +23,7 @@ export function useMediaLibrary({ canWrite, onUnauthorized }: Options) {
   const [page, setPage] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [batchDeleting, setBatchDeleting] = useState(false);
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
   const [editing, setEditing] = useState<MediaItem | null>(null);
@@ -39,10 +41,11 @@ export function useMediaLibrary({ canWrite, onUnauthorized }: Options) {
   }, [keyword]);
 
   const filters = { q: query || undefined, version: version || undefined, page, per_page: PER_PAGE };
+  const queryKey = toQueryString(filters);
   const { data, setData, loading, error, reload } = useAsyncData<MediaListResponse>(
     (signal) => listMedia(filters, signal),
     {
-      queryKey: toQueryString(filters),
+      queryKey,
       fallback: '媒体库加载失败',
       onUnauthorized,
     },
@@ -61,6 +64,9 @@ export function useMediaLibrary({ canWrite, onUnauthorized }: Options) {
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const { selectedIds, toggleSelect, toggleSelectAll, clearSelection } = useSelection(items, {
+    resetKey: queryKey,
+  });
 
   async function handleFiles(files: FileList | File[]) {
     if (!canWrite) return;
@@ -166,6 +172,36 @@ export function useMediaLibrary({ canWrite, onUnauthorized }: Options) {
     setPage(1);
   }
 
+  async function deleteSelected() {
+    if (!canWrite || batchDeleting || selectedIds.length === 0) return;
+    const count = selectedIds.length;
+    if (
+      !window.confirm(
+        `确定删除选中的 ${count} 张图片？\n删除后无法恢复，引用这些图片的页面将无法显示。`,
+      )
+    ) {
+      return;
+    }
+
+    setBatchDeleting(true);
+    try {
+      const payload = await deleteMediaBatch(selectedIds);
+      clearSelection();
+      setNotice({ kind: 'ok', text: `已删除 ${payload.deleted} 张图片` });
+      if (items.length === count && page > 1) {
+        setPage((value) => value - 1);
+      } else {
+        reload();
+      }
+    } catch (caught) {
+      const message = resolveAdminError(caught, '批量删除失败', onUnauthorized);
+      if (!message) return;
+      setNotice({ kind: 'error', text: message });
+    } finally {
+      setBatchDeleting(false);
+    }
+  }
+
   return {
     keyword,
     setKeyword,
@@ -197,5 +233,10 @@ export function useMediaLibrary({ canWrite, onUnauthorized }: Options) {
     openEdit,
     saveEdit,
     remove,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    batchDeleting,
+    deleteSelected,
   };
 }

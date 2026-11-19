@@ -1,6 +1,6 @@
 import { toQueryString } from '../../shared/query';
 import type { StaffRole } from '../types';
-import { getJson, patchJson, postJson } from './api';
+import { deleteJson, getJson, patchJson, postJson } from './api';
 
 export const STAFF_STATUSES = ['active', 'invited', 'disabled'] as const;
 export type StaffStatus = 'active' | 'disabled';
@@ -72,6 +72,14 @@ export function updateStaff(
     `/api/admin/users/${encodeURIComponent(id)}`,
     input,
   );
+}
+
+export function deleteStaff(id: string) {
+  return deleteJson<{ ok: true }>(`/api/admin/users/${encodeURIComponent(id)}`);
+}
+
+export function deleteStaffBatch(ids: string[]) {
+  return postJson<{ ok: true; deleted: number }>('/api/admin/users/batch-delete', { ids });
 }
 
 export function resetStaffPassword(id: string, password: string) {

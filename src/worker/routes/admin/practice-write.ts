@@ -201,6 +201,51 @@ practiceWriteRoutes.patch('/:id', requireEditor, async (c) => {
   return c.json({ item: row ?? existing });
 });
 
+practiceWriteRoutes.post('/batch-delete', requireEditor, async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const ids = Array.isArray(body.ids)
+    ? [
+        ...new Set(
+          body.ids.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0,
+          ),
+        ),
+      ]
+    : [];
+  if (ids.length === 0) return fail(c, 400, 'invalid_request', '请选择要删除的篇目');
+  if (ids.length > 100) return fail(c, 400, 'invalid_request', '一次最多删除 100 篇');
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const found = await c.env.DB.prepare(
+    `SELECT id, title FROM practice_texts WHERE id IN (${placeholders})`,
+  )
+    .bind(...ids)
+    .all<{ id: string; title: string }>();
+  const rows = found.results ?? [];
+  if (rows.length === 0) return fail(c, 404, 'practice_text_not_found', '篇目不存在');
+
+  const rowIds = rows.map((row) => row.id);
+  await c.env.DB.prepare(
+    `DELETE FROM practice_texts WHERE id IN (${rowIds.map(() => '?').join(', ')})`,
+  )
+    .bind(...rowIds)
+    .run();
+
+  for (const row of rows) {
+    await writeAudit(c, {
+      action: 'practice.delete',
+      targetType: 'practice_text',
+      targetId: row.id,
+      summary: row.title,
+    });
+    await purgePublicCache(c, row.id);
+  }
+
+  return c.json({ ok: true, deleted: rows.length });
+});
+
 practiceWriteRoutes.delete('/:id', requireEditor, async (c) => {
   const id = c.req.param('id') ?? '';
   const existing = await c.env.DB.prepare('SELECT id, title FROM practice_texts WHERE id = ? LIMIT 1')

@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles/admin.css';
 import './styles/extra.css';
-import './styles/content.css';
 
 const container = document.getElementById('admin-root');
 

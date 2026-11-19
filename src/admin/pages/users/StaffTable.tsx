@@ -14,6 +14,10 @@ interface StaffTableProps {
   error: string | null;
   hasFilters: boolean;
   pendingId: string | null;
+  selectedIds: string[];
+  deletingId: string | null;
+  onToggleSelect: (id: string) => void;
+  onDelete: (item: StaffAccount) => void;
   resetId: string | null;
   resetPassword: string;
   onReload: () => void;
@@ -34,6 +38,10 @@ export function StaffTable({
   error,
   hasFilters,
   pendingId,
+  selectedIds,
+  deletingId,
+  onToggleSelect,
+  onDelete,
   resetId,
   resetPassword,
   onReload,
@@ -71,6 +79,9 @@ export function StaffTable({
           <table className="xw-table">
             <thead>
               <tr>
+                <th scope="col" className="xw-table__check">
+                  <span className="xw-table__check-box" aria-hidden="true" />
+                </th>
                 <th scope="col">姓名</th>
                 <th scope="col">角色</th>
                 <th scope="col">状态</th>
@@ -87,6 +98,15 @@ export function StaffTable({
                 return (
                   <Fragment key={item.id}>
                     <tr>
+                      <td className="xw-table__check">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          disabled={isSelf}
+                          aria-label={`选择 ${item.name}`}
+                          onChange={() => onToggleSelect(item.id)}
+                        />
+                      </td>
                       <td>
                         <span className="xw-table__title">
                           {item.name}
@@ -147,13 +167,21 @@ export function StaffTable({
                           >
                             {item.status === 'disabled' ? '启用' : '停用'}
                           </button>
+                          <button
+                            type="button"
+                            className="xw-btn xw-btn--danger xw-btn--sm"
+                            disabled={busy || isSelf || deletingId === item.id}
+                            onClick={() => onDelete(item)}
+                          >
+                            {deletingId === item.id ? '删除中…' : '删除'}
+                          </button>
                         </div>
                       </td>
                     </tr>
 
                     {resetId === item.id && (
                       <tr>
-                        <td colSpan={6}>
+                        <td colSpan={7}>
                           <div className="xw-inline-form">
                             <input
                               className="xw-input"

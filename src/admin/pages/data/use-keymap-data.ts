@@ -18,7 +18,7 @@ interface Options {
 }
 
 /**
- * 码表页的数据加载：字根整表加载，例字走服务端分页，版本矩阵按需加载。
+ * 码表页的数据加载：字根与例字都走服务端分页，版本矩阵按需加载。
  * 各页签切换时取消旧请求，reload 用于新增/导入/删除后的重新取数。
  */
 export function useKeymapData({
@@ -49,10 +49,11 @@ export function useKeymapData({
     setLoading(true);
     setError(null);
 
-    listRoots(version, query, controller.signal)
+    listRoots(version, query, page, pageSize, controller.signal)
       .then((payload) => {
         if (controller.signal.aborted) return;
         setRoots(payload.items);
+        setTotal(payload.total);
         setLoadedTab('roots');
       })
       .catch((caught: unknown) => {
@@ -66,7 +67,7 @@ export function useKeymapData({
       });
 
     return () => controller.abort();
-  }, [tab, version, query, reloadKey, onUnauthorized]);
+  }, [tab, version, query, page, pageSize, reloadKey, onUnauthorized]);
 
   useEffect(() => {
     if (tab !== 'examples') return;

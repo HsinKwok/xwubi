@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Context } from 'hono';
 import type { AppEnv, Env } from './lib/env';
 import { fail, isSameOrigin } from './lib/http';
+import { prerenderContentPage, prerenderSiteShell } from './lib/prerender';
 import { loadSession } from './lib/session';
 import { adminRoutes } from './routes/admin/index';
 import { authRoutes } from './routes/auth';
@@ -131,7 +132,7 @@ async function serveAdminShell(c: Context<AppEnv>): Promise<Response> {
 }
 
 async function serveSiteShell(c: Context<AppEnv>): Promise<Response> {
-  const response = await c.env.ASSETS.fetch(assetRequest(c.req.raw, '/index.html'));
+  const response = await c.env.ASSETS.fetch(assetRequest(c.req.raw, '/site.html'));
   return withShellHeaders(response, 'public, max-age=0, must-revalidate');
 }
 
@@ -139,10 +140,18 @@ app.get('/admin', serveAdminShell);
 app.get('/admin/*', serveAdminShell);
 
 /** 未命中任何路由时统一回退：接口返回 JSON 404，页面路径回退到站点外壳 */
-function fallback(c: Context<AppEnv>) {
+async function fallback(c: Context<AppEnv>) {
   const path = new URL(c.req.url).pathname;
   if (path.startsWith('/api/')) return fail(c, 404, 'not_found', '接口不存在');
-  if (c.req.method === 'GET' && !/\.[a-z0-9]+$/i.test(path)) return serveSiteShell(c);
+  if (c.req.method === 'GET' && !/\.[a-z0-9]+$/i.test(path)) {
+    // 内容页直接返回带标题与正文骨架的 HTML，爬虫和首屏都不用等 JS 再发请求
+    const prerendered = await prerenderContentPage(c);
+    if (prerendered) return prerendered;
+    // 其余页面至少把头部与页脚画出来，避免 JS 执行完整页下移
+    const shell = await prerenderSiteShell(c);
+    if (shell) return shell;
+    return serveSiteShell(c);
+  }
   return c.text('Not Found', 404);
 }
 

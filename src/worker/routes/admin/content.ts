@@ -9,6 +9,7 @@ import { loadContent, loadContentWithTags } from './content-helpers';
 import {
   archiveContent,
   createContent,
+  deleteContentRows,
   publishContent,
   rejectContent,
   restoreContentRevision,
@@ -50,10 +51,81 @@ contentRoutes.post('/', requireRole(...WRITERS), async (c) => {
   );
 });
 
+contentRoutes.post('/batch-delete', requireRole(...WRITERS), async (c) => {
+  const body = await readJson<Record<string, unknown>>(c);
+  if (!body) return fail(c, 400, 'invalid_request', '请求体必须是 JSON');
+
+  const ids = Array.isArray(body.ids)
+    ? [
+        ...new Set(
+          body.ids.filter(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0,
+          ),
+        ),
+      ]
+    : [];
+  if (ids.length === 0) return fail(c, 400, 'invalid_request', '请选择要删除的内容');
+  if (ids.length > 100) return fail(c, 400, 'invalid_request', '一次最多删除 100 条内容');
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const found = await c.env.DB.prepare(
+    `SELECT id, title, type, status FROM content WHERE id IN (${placeholders})`,
+  )
+    .bind(...ids)
+    .all<{ id: string; title: string; type: string; status: string }>();
+  const rows = found.results ?? [];
+  if (rows.length === 0) return fail(c, 404, 'content_not_found', '内容不存在');
+
+  const user = c.get('user')!;
+  if (user.role === 'ops' && rows.some((row) => row.type !== 'news')) {
+    return fail(c, 403, 'forbidden', '运营角色只能删除资讯');
+  }
+
+  await deleteContentRows(
+    c,
+    rows.map((row) => row.id),
+  );
+  if (rows.some((row) => row.status === 'published')) await bumpEpoch(c.env);
+
+  for (const row of rows) {
+    await writeAudit(c, {
+      action: 'content.delete',
+      targetType: 'content',
+      targetId: row.id,
+      summary: row.title,
+    });
+  }
+
+  return c.json({ ok: true, deleted: rows.length });
+});
+
 contentRoutes.get('/:id', async (c) => {
   const { row, tags } = await loadContentWithTags(c, c.req.param('id') ?? '');
   if (!row) return fail(c, 404, 'content_not_found', '内容不存在');
   return c.json({ item: { ...mapAdminContent(row), tags } });
+});
+
+contentRoutes.delete('/:id', requireRole(...WRITERS), async (c) => {
+  const id = c.req.param('id') ?? '';
+  const row = await loadContent(c, id);
+  if (!row) return fail(c, 404, 'content_not_found', '内容不存在');
+
+  const user = c.get('user')!;
+  if (user.role === 'ops' && row.type !== 'news') {
+    return fail(c, 403, 'forbidden', '运营角色只能删除资讯');
+  }
+
+  await deleteContentRows(c, [id]);
+  if (row.status === 'published') await bumpEpoch(c.env);
+
+  await writeAudit(c, {
+    action: 'content.delete',
+    targetType: 'content',
+    targetId: id,
+    summary: row.title,
+  });
+
+  return c.json({ ok: true });
 });
 
 contentRoutes.patch('/:id', requireRole(...WRITERS), async (c) => {

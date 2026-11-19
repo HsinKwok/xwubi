@@ -8,12 +8,22 @@ export interface ExamplesTableProps {
   items: WubiExampleItem[];
   canWrite: boolean;
   loading: boolean;
+  selectedIds: string[];
+  onToggleSelect: (id: string) => void;
   onUpdate: (id: string, input: ExampleDraft) => Promise<void>;
   onDelete: (item: WubiExampleItem) => Promise<void>;
 }
 
 /** 例字表：行内编辑例字、编码、拆解与备注 */
-export function ExamplesTable({ items, canWrite, loading, onUpdate, onDelete }: ExamplesTableProps) {
+export function ExamplesTable({
+  items,
+  canWrite,
+  loading,
+  selectedIds,
+  onToggleSelect,
+  onUpdate,
+  onDelete,
+}: ExamplesTableProps) {
   const { editingId, draft, savingId, deletingId, startEdit, cancelEdit, patchDraft, runSave, runDelete } =
     useRowEditor<ExampleDraft>(EMPTY_EXAMPLE_EDIT);
 
@@ -22,6 +32,9 @@ export function ExamplesTable({ items, canWrite, loading, onUpdate, onDelete }: 
       <table className="xw-table">
         <thead>
           <tr>
+            <th className="xw-table__check">
+              <span className="xw-table__check-box" aria-hidden="true" />
+            </th>
             <th>例字</th>
             <th>编码</th>
             <th>拆解</th>
@@ -34,6 +47,14 @@ export function ExamplesTable({ items, canWrite, loading, onUpdate, onDelete }: 
             const editing = editingId === item.id;
             return (
               <tr key={item.id}>
+                <td className="xw-table__check">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => onToggleSelect(item.id)}
+                    aria-label={`选择例字「${item.char}」`}
+                  />
+                </td>
                 <td>
                   {editing ? (
                     <input

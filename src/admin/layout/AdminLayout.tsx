@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AppHeader } from '../components/AppHeader';
 import { AdminSidebar } from '../components/AdminSidebar';
+import { prefetchSection } from '../pages/lazy-pages';
 import type { VersionOption } from '../lib/versions';
 import type {
   AdminBadgeCounts,
@@ -62,6 +63,12 @@ export function AdminLayout({
     }
   }, [collapsed]);
 
+  // 空闲时预取最常用的内容列表 chunk，侧栏悬停时再按需预取其他页面
+  useEffect(() => {
+    const timer = window.setTimeout(() => prefetchSection('content'), 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   // 移动端抽屉：Esc 关闭
   useEffect(() => {
     if (!mobileOpen) return;
@@ -109,6 +116,7 @@ export function AdminLayout({
           collapsed={collapsed}
           mobileOpen={mobileOpen}
           onNavigate={handleNavigate}
+          onPrefetch={prefetchSection}
           onToggleCollapse={() => setCollapsed((value) => !value)}
           onCloseMobile={() => setMobileOpen(false)}
           onBackToSite={onHeaderNavigate ? () => onHeaderNavigate('/') : undefined}

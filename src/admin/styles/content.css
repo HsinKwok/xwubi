@@ -197,6 +197,18 @@
   white-space: nowrap;
 }
 
+.xw-table__check {
+  width: 40px;
+  padding-right: 0;
+}
+
+.xw-table__check input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--xw-brand);
+  cursor: pointer;
+}
+
 .xw-table__link {
   color: var(--xw-brand-text);
   font-weight: 600;
@@ -205,6 +217,26 @@
 
 .xw-table__link:hover {
   text-decoration: underline;
+}
+
+.xw-table__danger {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--xw-danger);
+  cursor: pointer;
+}
+
+.xw-table__danger:hover {
+  text-decoration: underline;
+}
+
+.xw-table__danger:disabled {
+  color: var(--xw-text-muted);
+  text-decoration: none;
+  cursor: not-allowed;
 }
 
 /* 状态徽标 */
@@ -246,22 +278,6 @@
 :root[data-theme='dark'] .xw-status--pending,
 :root[data-theme='dark'] .xw-status--needs_review {
   color: #fbbf24;
-}
-
-/* 分页 */
-
-.xw-page-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--xw-text-muted);
-  font-size: 12.5px;
-}
-
-.xw-page-foot__actions {
-  display: flex;
-  gap: 8px;
 }
 
 /* ---------- 编辑器 ---------- */

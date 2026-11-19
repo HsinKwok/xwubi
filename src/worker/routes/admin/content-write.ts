@@ -127,6 +127,15 @@ export async function updateContent(
   }
 
   const assignments: Array<[string, unknown]> = [];
+  if (typeof body.type === 'string' && body.type !== existing.type) {
+    if (!(await isKnownContentType(c, body.type))) {
+      return { error: { status: 400, code: 'invalid_type', message: '内容类型不合法' } };
+    }
+    if (c.get('user')?.role === 'ops') {
+      return { error: { status: 403, code: 'forbidden', message: '运营角色只能维护资讯' } };
+    }
+    assignments.push(['type', body.type]);
+  }
   if (typeof body.title === 'string') assignments.push(['title', body.title.trim()]);
   if (typeof body.summary === 'string') assignments.push(['summary', body.summary]);
   if (typeof body.body_md === 'string') assignments.push(['body_md', body.body_md]);

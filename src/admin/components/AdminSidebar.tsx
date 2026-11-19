@@ -11,6 +11,8 @@ export interface AdminSidebarProps {
   collapsed?: boolean;
   mobileOpen?: boolean;
   onNavigate?: (section: AdminSection, href: string) => void;
+  /** 悬停/聚焦时预取目标页面 chunk */
+  onPrefetch?: (section: AdminSection) => void;
   onToggleCollapse?: () => void;
   onCloseMobile?: () => void;
   /** 返回前台（SPA 跳转用） */
@@ -99,6 +101,7 @@ export function AdminSidebar({
   collapsed = false,
   mobileOpen = false,
   onNavigate,
+  onPrefetch,
   onToggleCollapse,
   onCloseMobile,
   onBackToSite,
@@ -190,6 +193,9 @@ export function AdminSidebar({
                   aria-current={isCurrent ? 'page' : undefined}
                   title={collapsed ? item.label : undefined}
                   onClick={(event) => handleItemClick(event, item)}
+                  onMouseEnter={() => onPrefetch?.(item.key)}
+                  onFocus={() => onPrefetch?.(item.key)}
+                  onTouchStart={() => onPrefetch?.(item.key)}
                 >
                   <span className="xw-sidebar__icon">
                     <Icon name={item.icon} size={18} />

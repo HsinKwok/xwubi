@@ -1,4 +1,6 @@
 import { Icon } from '../../components/icons';
+import { NoticeBar } from '../../components/NoticeBar';
+import { Pager } from '../../components/Pager';
 import type { AdminUser } from '../../types';
 import { contentVersionOptions } from '../../lib/versions';
 import { ReviewCard } from './ReviewCard';
@@ -16,9 +18,13 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
 
   const {
     type,
-    setType,
+    changeType,
     version,
-    setVersion,
+    changeVersion,
+    page,
+    setPage,
+    totalPages,
+    total,
     pending,
     notice,
     rejectingId,
@@ -30,10 +36,20 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
     loading,
     error,
     reload,
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    deletingId,
+    deletingBatch,
     handlePublish,
     handleReject,
     toggleReject,
+    deleteOne,
+    deleteSelected,
   } = useReviewQueue({ canReview, onUnauthorized });
+
+  const allSelected =
+    items.length > 0 && items.every((item) => selectedIds.includes(item.id));
 
   return (
     <div className="xw-content">
@@ -78,7 +94,7 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
           className="xw-select"
           aria-label="按类型筛选"
           value={type}
-          onChange={(event) => setType(event.target.value)}
+          onChange={(event) => changeType(event.target.value)}
         >
           <option value="">全部类型</option>
           {contentTypes.map((item) => (
@@ -92,7 +108,7 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
           className="xw-select"
           aria-label="按码表版本筛选"
           value={version}
-          onChange={(event) => setVersion(event.target.value)}
+          onChange={(event) => changeVersion(event.target.value)}
         >
           <option value="">全部版本</option>
           {contentVersionOptions().map((item) => (
@@ -102,8 +118,31 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
           ))}
         </select>
 
+        {canReview && (
+          <label className="xw-check-line">
+            <input
+              type="checkbox"
+              className="xw-check"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              disabled={items.length === 0}
+            />
+            全选本页
+          </label>
+        )}
+
         <span className="xw-toolbar__spacer" />
-        <span className="xw-toolbar__count">{loading ? '加载中…' : `队列 ${items.length} 条`}</span>
+        {canReview && selectedIds.length > 0 && (
+          <button
+            type="button"
+            className="xw-btn xw-btn--danger xw-btn--sm"
+            disabled={deletingBatch}
+            onClick={() => void deleteSelected()}
+          >
+            {deletingBatch ? '删除中…' : `批量删除（${selectedIds.length}）`}
+          </button>
+        )}
+        <span className="xw-toolbar__count">{loading ? '加载中…' : `队列 ${total} 条`}</span>
       </div>
 
       {!canReview && (
@@ -112,11 +151,7 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
         </div>
       )}
 
-      {notice && (
-        <div className={`xw-notice xw-notice--${notice.tone}`} role="status">
-          {notice.text}
-        </div>
-      )}
+      <NoticeBar notice={notice} />
 
       {error ? (
         <div className="xw-panel">
@@ -150,6 +185,10 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
               pending={pending}
               rejecting={rejectingId === item.id}
               rejectNote={rejectNote}
+              selected={selectedIds.includes(item.id)}
+              deleting={deletingId === item.id}
+              onToggleSelect={() => toggleSelect(item.id)}
+              onDelete={() => void deleteOne(item)}
               onRejectNoteChange={setRejectNote}
               onOpen={onNavigate}
               onPublish={() => void handlePublish(item)}
@@ -159,6 +198,10 @@ export function ReviewPage({ user, onNavigate, onUnauthorized }: ReviewPageProps
             />
           ))}
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <Pager page={page} totalPages={totalPages} total={total} loading={loading} onChange={setPage} />
       )}
     </div>
   );

@@ -10,11 +10,31 @@ interface Props {
   loading: boolean;
   contentTypes: { slug: string; label: string }[];
   emptyText: string;
+  canWrite: boolean;
+  selectedIds: string[];
+  deletingId: string | null;
   go: (event: ReactMouseEvent<HTMLAnchorElement>, href: string) => void;
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAll: () => void;
+  onDelete: (item: AdminContentItem) => void;
 }
 
-/** 内容列表表格：标题、类型、版本、状态与编辑入口 */
-export function ContentTable({ items, loading, contentTypes, emptyText, go }: Props) {
+/** 内容列表表格：勾选、标题、类型、版本、状态与编辑/删除入口 */
+export function ContentTable({
+  items,
+  loading,
+  contentTypes,
+  emptyText,
+  canWrite,
+  selectedIds,
+  deletingId,
+  go,
+  onToggleSelect,
+  onToggleSelectAll,
+  onDelete,
+}: Props) {
+  const allSelected = items.length > 0 && items.every((item) => selectedIds.includes(item.id));
+
   if (!loading && items.length === 0) {
     return (
       <div className="xw-empty">
@@ -29,6 +49,16 @@ export function ContentTable({ items, loading, contentTypes, emptyText, go }: Pr
       <table className="xw-table">
         <thead>
           <tr>
+            {canWrite && (
+              <th scope="col" className="xw-table__check">
+                <input
+                  type="checkbox"
+                  aria-label="全选当前页内容"
+                  checked={allSelected}
+                  onChange={onToggleSelectAll}
+                />
+              </th>
+            )}
             <th scope="col">标题</th>
             <th scope="col">类型</th>
             <th scope="col">版本</th>
@@ -41,6 +71,16 @@ export function ContentTable({ items, loading, contentTypes, emptyText, go }: Pr
         <tbody>
           {items.map((item) => (
             <tr key={item.id}>
+              {canWrite && (
+                <td className="xw-table__check">
+                  <input
+                    type="checkbox"
+                    aria-label={`选择 ${item.title}`}
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => onToggleSelect(item.id)}
+                  />
+                </td>
+              )}
               <td>
                 <a
                   className="xw-table__title"
@@ -63,13 +103,25 @@ export function ContentTable({ items, loading, contentTypes, emptyText, go }: Pr
               <td>{item.author ?? '—'}</td>
               <td className="xw-table__time">{formatDate(item.updated_at)}</td>
               <td className="xw-table__action">
-                <a
-                  className="xw-table__link"
-                  href={`/admin/content/${item.id}`}
-                  onClick={(event) => go(event, `/admin/content/${item.id}`)}
-                >
-                  编辑
-                </a>
+                <span className="xw-table__actions">
+                  <a
+                    className="xw-table__link"
+                    href={`/admin/content/${item.id}`}
+                    onClick={(event) => go(event, `/admin/content/${item.id}`)}
+                  >
+                    编辑
+                  </a>
+                  {canWrite && (
+                    <button
+                      type="button"
+                      className="xw-table__danger"
+                      disabled={deletingId === item.id}
+                      onClick={() => onDelete(item)}
+                    >
+                      {deletingId === item.id ? '删除中…' : '删除'}
+                    </button>
+                  )}
+                </span>
               </td>
             </tr>
           ))}

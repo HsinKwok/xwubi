@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { renderMarkdown } from '../../../site/lib/markdown';
 import type { MediaItem } from '../../lib/media-api';
 import { MediaPicker } from '../media/MediaPicker';
@@ -20,28 +20,10 @@ interface ToolButton {
 export function MarkdownEditor({ value, disabled = false, onChange }: MarkdownEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState(false);
-  const [html, setHtml] = useState('');
-  const [rendering, setRendering] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const savedRange = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
-  useEffect(() => {
-    if (!preview) return;
-    let cancelled = false;
-    setRendering(true);
-    renderMarkdown(value)
-      .then((result) => {
-        if (cancelled) return;
-        setHtml(result);
-        setRendering(false);
-      })
-      .catch(() => {
-        if (!cancelled) setRendering(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [preview, value]);
+  const html = useMemo(() => (preview ? renderMarkdown(value) : ''), [preview, value]);
 
   function apply(next: string, caret: number) {
     onChange(next);
@@ -179,9 +161,7 @@ export function MarkdownEditor({ value, disabled = false, onChange }: MarkdownEd
       </div>
 
       {preview ? (
-        rendering ? (
-          <p className="xw-field__hint">正在生成预览…</p>
-        ) : html.trim() ? (
+        html.trim() ? (
           <div className="xw-md__preview" dangerouslySetInnerHTML={{ __html: html }} />
         ) : (
           <p className="xw-field__hint">还没有正文内容。</p>

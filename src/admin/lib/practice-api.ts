@@ -67,3 +67,7 @@ export function updatePracticeText(
 export function deletePracticeText(id: string): Promise<{ ok: boolean }> {
   return deleteJson<{ ok: boolean }>(`/api/admin/practice-texts/${encodeURIComponent(id)}`);
 }
+
+export function deletePracticeTexts(ids: string[]): Promise<{ ok: true; deleted: number }> {
+  return postJson('/api/admin/practice-texts/batch-delete', { ids });
+}
